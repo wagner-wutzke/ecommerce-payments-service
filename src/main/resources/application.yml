@@ -1,0 +1,40 @@
+server:
+  port: ${APP_PORT:9300}
+spring:
+  application:
+    name: payments-service
+  datasource:
+    url: jdbc:h2:file:./data/payments-db
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+  jpa:
+    hibernate:
+      ddl-auto: update
+    open-in-view: false
+    show-sql: false
+  h2:
+    console:
+      enabled: ${H2_CONSOLE_ENABLED:true}
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    consumer:
+      properties:
+        spring.json.trusted.packages: "net.wowdev.ecommerce.domain.dto"
+    producer:
+      acks: all
+      retries: 5
+      properties:
+        enable.idempotence: true
+        max.in.flight.requests.per.connection: 5
+
+app:
+  kafka:
+    payment-changes-topic: ${KAFKA_PAYMENT_CHANGES_TOPIC:payments-change-topic.v1}
+    consumer-group: ${KAFKA_CONSUMER_GROUP:payments-events-consumer}
+
+logging:
+  level:
+    org.hibernate.SQL: INFO
+    org.hibernate.orm.jdbc.bind: INFO
+    net.wowdev.ecommerce.payments: DEBUG
