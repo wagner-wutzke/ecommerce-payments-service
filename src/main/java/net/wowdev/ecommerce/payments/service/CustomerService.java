@@ -8,6 +8,6 @@ public interface CustomerService {
 
     CustomerDTO findById(UUID id);
 
-    CustomerDTO updateReplicaEntity(CustomerDTO customer);
+    CustomerDTO updateCustomerData(CustomerDTO customer);
 
 }

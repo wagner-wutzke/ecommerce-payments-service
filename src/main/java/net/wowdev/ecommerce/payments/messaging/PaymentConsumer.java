@@ -15,7 +15,7 @@ import org.springframework.stereotype.Component;
 @AllArgsConstructor
 @KafkaListener(
         groupId = "${spring.kafka.consumer.group-id}",
-        topics = { "${app.kafka.payment-events-topic}" },
+        topics = { "${app.kafka.customer-events-topic}" },
         containerFactory = "kafkaListenerContainerFactory"
 )
 public class PaymentConsumer {
@@ -31,6 +31,6 @@ public class PaymentConsumer {
     @KafkaHandler
     public void handleCustomerLoaded(CustomerLoadedEvent event) {
         log.info(">>>> Processing CustomerLoadedEvent: {}", event);
-        customerService.updateReplicaEntity(event.customerDTO());
+        customerService.updateCustomerData(event.customerDTO());
     }
 }

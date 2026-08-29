@@ -61,7 +61,7 @@ class DefaultCustomerServiceTest {
         when(customerRepository.save(any(CustomerEntity.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
 
-        final CustomerDTO result = service.updateReplicaEntity(customer);
+        final CustomerDTO result = service.updateCustomerData(customer);
 
         assertThat(result).isEqualTo(customer);
         verify(customerRepository).save(any(CustomerEntity.class));
@@ -75,7 +75,7 @@ class DefaultCustomerServiceTest {
         when(customerRepository.save(any(CustomerEntity.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
 
-        final CustomerDTO result = service.updateReplicaEntity(customer);
+        final CustomerDTO result = service.updateCustomerData(customer);
 
         assertThat(result).isEqualTo(customer);
         assertThat(existing.getFirstName()).isEqualTo(customer.getFirstName());

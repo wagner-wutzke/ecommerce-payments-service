@@ -27,7 +27,7 @@ public class DefaultCustomerService implements CustomerService {
 
     @Override
     @Transactional
-    public CustomerDTO updateReplicaEntity(final CustomerDTO customer) {
+    public CustomerDTO updateCustomerData(final CustomerDTO customer) {
         log.debug(">>>> Saving CustomerDTO: {}", customer);
         CustomerEntity replicaEntity;
         CustomerEntity mappedEntity = CustomerMapper.toEntity(customer);
