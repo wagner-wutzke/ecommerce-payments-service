@@ -15,7 +15,6 @@ import org.springframework.test.web.servlet.MockMvc;
 import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
@@ -29,13 +28,12 @@ class PaymentControllerTest {
     private PaymentService service;
 
     @Test
-    void supportsCrudEndpoints() throws Exception {
+    void supportsPaymentEndpoints() throws Exception {
         final PaymentDTO payment = TestFixtures.paymentDto();
         when(service.findById(payment.getId())).thenReturn(payment);
         when(service.findAll(any())).thenReturn(new PageImpl<>(List.of(payment)));
         when(service.create(any())).thenReturn(payment);
         when(service.update(any(), any())).thenReturn(payment);
-        doNothing().when(service).delete(payment.getId());
         mockMvc.perform(get("/api/v1/payments/{id}", payment.getId())).andExpect(status().isOk());
         mockMvc.perform(get("/api/v1/payments")).andExpect(status().isOk());
         mockMvc.perform(post("/api/v1/payments").contentType(MediaType.APPLICATION_JSON)
@@ -45,7 +43,6 @@ class PaymentControllerTest {
         mockMvc.perform(put("/api/v1/payments/{id}", payment.getId()).contentType(MediaType.APPLICATION_JSON)
                         .content("{\"transactionId\":\"TX-2\"}"))
                 .andExpect(status().isOk());
-        mockMvc.perform(delete("/api/v1/payments/{id}", payment.getId())).andExpect(status().isNoContent());
     }
 
     @Test

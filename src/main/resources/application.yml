@@ -1,5 +1,5 @@
 server:
-  port: ${APP_PORT:9300}
+  port: ${APP_PORT:9400}
 spring:
   application:
     name: payments-service
@@ -17,24 +17,28 @@ spring:
     console:
       enabled: ${H2_CONSOLE_ENABLED:true}
   kafka:
-    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092, localhost:9094, localhost:9096}
     consumer:
+      group-id: ${KAFKA_CONSUMER_GROUP:payments-events-group.v1}
       properties:
-        spring.json.trusted.packages: "net.wowdev.ecommerce.domain.dto"
+        spring.json.trusted.packages: "net.wowdev.ecommerce.domain.events"
     producer:
       acks: all
-      retries: 5
+      retries: 3
       properties:
         enable.idempotence: true
         max.in.flight.requests.per.connection: 5
+        delivery.timeout.ms: 30000
+        request.timeout.ms: 10000
+        linger.ms: 0
 
 app:
   kafka:
-    payment-changes-topic: ${KAFKA_PAYMENT_CHANGES_TOPIC:payments-change-topic.v1}
-    consumer-group: ${KAFKA_CONSUMER_GROUP:payments-events-consumer}
+    payment-events-topic: ${KAFKA_PAYMENT_CHANGES_TOPIC:payment-events-topic.v1}
+    order-events-topic: ${KAFKA_PAYMENT_CHANGES_TOPIC:order-events-topic.v1}
+    customer-events-topic: ${KAFKA_PAYMENT_CHANGES_TOPIC:customer-events-topic.v1}
 
 logging:
   level:
-    org.hibernate.SQL: INFO
     org.hibernate.orm.jdbc.bind: INFO
     net.wowdev.ecommerce.payments: DEBUG

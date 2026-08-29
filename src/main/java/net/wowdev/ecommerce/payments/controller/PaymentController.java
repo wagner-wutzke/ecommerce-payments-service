@@ -47,11 +47,11 @@ public class PaymentController {
         return service.update(id, payment);
     }
 
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable final UUID id) {
-        service.delete(id);
-        return ResponseEntity.noContent().build();
-    }
+//    @DeleteMapping("/{id}")
+//    public ResponseEntity<Void> delete(@PathVariable final UUID id) {
+//        service.delete(id);
+//        return ResponseEntity.noContent().build();
+//    }
 
     @ExceptionHandler(PaymentNotFoundException.class)
     public ResponseEntity<Void> notFound(final PaymentNotFoundException exception) {

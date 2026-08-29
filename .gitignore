@@ -2,3 +2,5 @@
 /.mvn/
 /target/
 /payments.iml
+/data/payments-db.mv.db
+/data/payments-db.trace.db
