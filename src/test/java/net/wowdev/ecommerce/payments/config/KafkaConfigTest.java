@@ -6,11 +6,7 @@ import org.apache.kafka.common.serialization.StringDeserializer;
 import org.apache.kafka.common.serialization.StringSerializer;
 import org.junit.jupiter.api.Test;
 import org.springframework.kafka.config.ConcurrentKafkaListenerContainerFactory;
-import org.springframework.kafka.core.ConsumerFactory;
-import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
-import org.springframework.kafka.core.DefaultKafkaProducerFactory;
-import org.springframework.kafka.core.KafkaTemplate;
-import org.springframework.kafka.core.ProducerFactory;
+import org.springframework.kafka.core.*;
 import org.springframework.kafka.listener.DefaultErrorHandler;
 import org.springframework.kafka.support.serializer.JacksonJsonDeserializer;
 import org.springframework.kafka.support.serializer.JacksonJsonSerializer;
@@ -19,25 +15,6 @@ import org.springframework.test.util.ReflectionTestUtils;
 import static org.assertj.core.api.Assertions.assertThat;
 
 class KafkaConfigTest {
-
-    @Test
-    void createsConfiguredKafkaBeans() {
-        final KafkaConfig config = configuredKafkaConfig();
-
-        final ProducerFactory<String, Object> producerFactory = config.producerFactory();
-        final ConsumerFactory<String, Object> consumerFactory = config.consumerFactory();
-        final KafkaTemplate<String, Object> kafkaTemplate = config.kafkaTemplate(producerFactory);
-        final ConcurrentKafkaListenerContainerFactory<String, Object> listenerFactory =
-                config.kafkaListenerContainerFactory(consumerFactory, kafkaTemplate);
-
-        assertProducerConfiguration(producerFactory);
-        assertConsumerConfiguration(consumerFactory);
-        assertThat(kafkaTemplate.getProducerFactory()).isSameAs(producerFactory);
-        assertThat(listenerFactory.getConsumerFactory()).isSameAs(consumerFactory);
-        assertThat(ReflectionTestUtils.getField(listenerFactory, "concurrency")).isEqualTo(3);
-        assertThat(ReflectionTestUtils.getField(listenerFactory, "commonErrorHandler"))
-                .isInstanceOf(DefaultErrorHandler.class);
-    }
 
     private static KafkaConfig configuredKafkaConfig() {
         final KafkaConfig config = new KafkaConfig();
@@ -77,6 +54,25 @@ class KafkaConfigTest {
         properties.contains(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
         properties.contains(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, JacksonJsonDeserializer.class);
         properties.contains(JacksonJsonDeserializer.TRUSTED_PACKAGES, "net.wowdev.ecommerce.domain.events");
+    }
+
+    @Test
+    void createsConfiguredKafkaBeans() {
+        final KafkaConfig config = configuredKafkaConfig();
+
+        final ProducerFactory<String, Object> producerFactory = config.producerFactory();
+        final ConsumerFactory<String, Object> consumerFactory = config.consumerFactory();
+        final KafkaTemplate<String, Object> kafkaTemplate = config.kafkaTemplate(producerFactory);
+        final ConcurrentKafkaListenerContainerFactory<String, Object> listenerFactory =
+                config.kafkaListenerContainerFactory(consumerFactory, kafkaTemplate);
+
+        assertProducerConfiguration(producerFactory);
+        assertConsumerConfiguration(consumerFactory);
+        assertThat(kafkaTemplate.getProducerFactory()).isSameAs(producerFactory);
+        assertThat(listenerFactory.getConsumerFactory()).isSameAs(consumerFactory);
+        assertThat(ReflectionTestUtils.getField(listenerFactory, "concurrency")).isEqualTo(3);
+        assertThat(ReflectionTestUtils.getField(listenerFactory, "commonErrorHandler"))
+                .isInstanceOf(DefaultErrorHandler.class);
     }
 
     private record MapAssertions(java.util.Map<String, Object> values) {

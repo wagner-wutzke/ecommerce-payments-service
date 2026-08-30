@@ -2,8 +2,8 @@ package net.wowdev.ecommerce.payments.messaging;
 
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import net.wowdev.ecommerce.domain.events.CustomerLoadedEvent;
-import net.wowdev.ecommerce.domain.events.OrderCreatedEvent;
+import net.wowdev.ecommerce.domain.events.CustomerDataLoadedEvent;
+import net.wowdev.ecommerce.domain.events.OrderCreationStartedEvent;
 import net.wowdev.ecommerce.payments.service.CustomerService;
 import net.wowdev.ecommerce.payments.service.PaymentService;
 import org.springframework.kafka.annotation.KafkaHandler;
@@ -15,7 +15,7 @@ import org.springframework.stereotype.Component;
 @AllArgsConstructor
 @KafkaListener(
         groupId = "${spring.kafka.consumer.group-id}",
-        topics = { "${app.kafka.customer-events-topic}" },
+        topics = {"${app.kafka.customer-events-topic}"},
         containerFactory = "kafkaListenerContainerFactory"
 )
 public class PaymentConsumer {
@@ -24,12 +24,12 @@ public class PaymentConsumer {
     private final CustomerService customerService;
 
     @KafkaHandler
-    public void handleOrderCreated(OrderCreatedEvent event) {
+    public void handleOrderCreated(OrderCreationStartedEvent event) {
         log.info(">>>> Processing CreatedOrderEvent: {}", event);
     }
 
     @KafkaHandler
-    public void handleCustomerLoaded(CustomerLoadedEvent event) {
+    public void handleCustomerLoaded(CustomerDataLoadedEvent event) {
         log.info(">>>> Processing CustomerLoadedEvent: {}", event);
         customerService.updateCustomerData(event.customerDTO());
     }

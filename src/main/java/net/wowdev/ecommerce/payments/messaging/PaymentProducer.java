@@ -1,6 +1,6 @@
 package net.wowdev.ecommerce.payments.messaging;
 
-import net.wowdev.ecommerce.domain.events.PaymentCreatedEvent;
+import net.wowdev.ecommerce.domain.events.PaymentCompletedEvent;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Component;
@@ -19,7 +19,7 @@ public class PaymentProducer {
     }
 
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
-    public void publishAfterCommit(final PaymentCreatedEvent event) {
+    public void publishAfterCommit(final PaymentCompletedEvent event) {
         template.send(topic, event.paymentDTO().getId().toString(), event);
     }
 }

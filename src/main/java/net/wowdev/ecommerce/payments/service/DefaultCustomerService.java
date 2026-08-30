@@ -19,6 +19,22 @@ public class DefaultCustomerService implements CustomerService {
 
     private final CustomerRepository customerRepository;
 
+    private static CustomerEntity getCustomerEntity(CustomerEntity entity, CustomerEntity mappedEntity) {
+        entity.setFirstName(mappedEntity.getFirstName());
+        entity.setLastName(mappedEntity.getLastName());
+        entity.setEmail(mappedEntity.getEmail());
+        entity.setCustomerStatus(mappedEntity.getCustomerStatus());
+        entity.setAddressLine1(mappedEntity.getAddressLine1());
+        entity.setAddressLine2(mappedEntity.getAddressLine2());
+        entity.setCity(mappedEntity.getCity());
+        entity.setStateProvince(mappedEntity.getStateProvince());
+        entity.setPostalCode(mappedEntity.getPostalCode());
+        entity.setCountry(mappedEntity.getCountry());
+        entity.setCreatedAt(mappedEntity.getCreatedAt());
+        entity.setModifiedAt(mappedEntity.getModifiedAt());
+        return entity;
+    }
+
     @Override
     @Transactional(readOnly = true)
     public CustomerDTO findById(final UUID id) {
@@ -40,21 +56,5 @@ public class DefaultCustomerService implements CustomerService {
         }
         log.debug(">>>> Saved CustomerEntity: {}", replicaEntity);
         return CustomerMapper.toDto(replicaEntity);
-    }
-
-    private static CustomerEntity getCustomerEntity(CustomerEntity entity, CustomerEntity mappedEntity) {
-        entity.setFirstName(mappedEntity.getFirstName());
-        entity.setLastName(mappedEntity.getLastName());
-        entity.setEmail(mappedEntity.getEmail());
-        entity.setCustomerStatus(mappedEntity.getCustomerStatus());
-        entity.setAddressLine1(mappedEntity.getAddressLine1());
-        entity.setAddressLine2(mappedEntity.getAddressLine2());
-        entity.setCity(mappedEntity.getCity());
-        entity.setStateProvince(mappedEntity.getStateProvince());
-        entity.setPostalCode(mappedEntity.getPostalCode());
-        entity.setCountry(mappedEntity.getCountry());
-        entity.setCreatedAt(mappedEntity.getCreatedAt());
-        entity.setModifiedAt(mappedEntity.getModifiedAt());
-        return entity;
     }
 }

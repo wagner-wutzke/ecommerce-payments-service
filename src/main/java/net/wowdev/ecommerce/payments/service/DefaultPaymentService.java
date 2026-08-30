@@ -2,7 +2,6 @@ package net.wowdev.ecommerce.payments.service;
 
 import net.wowdev.ecommerce.domain.dto.PaymentDTO;
 import net.wowdev.ecommerce.domain.entity.PaymentEntity;
-import net.wowdev.ecommerce.domain.events.PaymentCreatedEvent;
 import net.wowdev.ecommerce.domain.mapper.PaymentMapper;
 import net.wowdev.ecommerce.payments.repository.PaymentRepository;
 import org.springframework.context.ApplicationEventPublisher;
@@ -11,8 +10,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
-import java.time.ZoneOffset;
 import java.util.UUID;
 
 @Service
@@ -29,7 +26,7 @@ public class DefaultPaymentService implements PaymentService {
     @Transactional(readOnly = true)
     public PaymentDTO findById(final UUID id) {
         return repository.findById(id).map(PaymentMapper::toDto)
-                .orElseThrow(() -> new PaymentNotFoundException("Payment not found: " + id));
+                         .orElseThrow(() -> new PaymentNotFoundException("Payment not found: " + id));
     }
 
     @Override
@@ -49,7 +46,7 @@ public class DefaultPaymentService implements PaymentService {
     @Transactional
     public PaymentDTO update(final UUID id, final PaymentDTO payment) {
         final PaymentEntity current = repository.findById(id)
-                .orElseThrow(() -> new PaymentNotFoundException("Payment not found: " + id));
+                                                .orElseThrow(() -> new PaymentNotFoundException("Payment not found: " + id));
         final PaymentDTO replacement = PaymentMapper.toDto(current);
         replacement.setTransactionId(payment.getTransactionId());
         replacement.setAmount(payment.getAmount());

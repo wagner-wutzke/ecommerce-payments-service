@@ -37,12 +37,12 @@ class PaymentControllerTest {
         mockMvc.perform(get("/api/v1/payments/{id}", payment.getId())).andExpect(status().isOk());
         mockMvc.perform(get("/api/v1/payments")).andExpect(status().isOk());
         mockMvc.perform(post("/api/v1/payments").contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"transactionId\":\"TX-1\"}"))
-                .andExpect(status().isCreated())
-                .andExpect(header().string("Location", "/api/v1/payments/" + payment.getId()));
+                                                .content("{\"transactionId\":\"TX-1\"}"))
+               .andExpect(status().isCreated())
+               .andExpect(header().string("Location", "/api/v1/payments/" + payment.getId()));
         mockMvc.perform(put("/api/v1/payments/{id}", payment.getId()).contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"transactionId\":\"TX-2\"}"))
-                .andExpect(status().isOk());
+                                                                     .content("{\"transactionId\":\"TX-2\"}"))
+               .andExpect(status().isOk());
     }
 
     @Test
@@ -52,8 +52,8 @@ class PaymentControllerTest {
         mockMvc.perform(get("/api/v1/payments?pageSize=101")).andExpect(status().isBadRequest());
         final PaymentController controller = new PaymentController(service);
         org.assertj.core.api.Assertions.assertThat(controller.notFound(new PaymentNotFoundException("missing"))
-                .getStatusCode().value()).isEqualTo(404);
+                                                             .getStatusCode().value()).isEqualTo(404);
         org.assertj.core.api.Assertions.assertThat(controller.badRequest(new IllegalArgumentException("bad"))
-                .getStatusCode().value()).isEqualTo(400);
+                                                             .getStatusCode().value()).isEqualTo(400);
     }
 }

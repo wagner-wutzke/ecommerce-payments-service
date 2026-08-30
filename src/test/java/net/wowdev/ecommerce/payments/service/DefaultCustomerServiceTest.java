@@ -15,9 +15,7 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 class DefaultCustomerServiceTest {
 
@@ -25,6 +23,35 @@ class DefaultCustomerServiceTest {
 
     private CustomerRepository customerRepository;
     private DefaultCustomerService service;
+
+    private static CustomerDTO customerDto(final String firstName) {
+        final CustomerDTO customer = new CustomerDTO();
+        customer.setId(CUSTOMER_ID);
+        customer.setFirstName(firstName);
+        customer.setLastName("Customer");
+        customer.setEmail(firstName.toLowerCase() + "@example.com");
+        customer.setCustomerStatus(CustomerStatus.ACTIVE);
+        customer.setPaymentMethods(List.of());
+        customer.setAddressLine1("1 Main Street");
+        customer.setAddressLine2("Apt 2");
+        customer.setCity("Sao Paulo");
+        customer.setStateProvince("SP");
+        customer.setPostalCode("01000-000");
+        customer.setCountry("Brazil");
+        customer.setCreatedAt(Instant.parse("2026-01-01T00:00:00Z"));
+        customer.setModifiedAt(Instant.parse("2026-01-02T00:00:00Z"));
+        return customer;
+    }
+
+    private static CustomerEntity customerEntity(final String firstName) {
+        final CustomerDTO customer = customerDto(firstName);
+        return new CustomerEntity(customer.getId(), customer.getFirstName(), customer.getLastName(),
+                                  customer.getEmail(), customer.getCustomerStatus(), List.of(),
+                                  customer.getAddressLine1(),
+                                  customer.getAddressLine2(), customer.getCity(), customer.getStateProvince(),
+                                  customer.getPostalCode(), customer.getCountry(), customer.getCreatedAt(),
+                                  customer.getModifiedAt());
+    }
 
     @BeforeEach
     void setUp() {
@@ -91,32 +118,5 @@ class DefaultCustomerServiceTest {
         assertThat(existing.getCreatedAt()).isEqualTo(customer.getCreatedAt());
         assertThat(existing.getModifiedAt()).isEqualTo(customer.getModifiedAt());
         verify(customerRepository).save(existing);
-    }
-
-    private static CustomerDTO customerDto(final String firstName) {
-        final CustomerDTO customer = new CustomerDTO();
-        customer.setId(CUSTOMER_ID);
-        customer.setFirstName(firstName);
-        customer.setLastName("Customer");
-        customer.setEmail(firstName.toLowerCase() + "@example.com");
-        customer.setCustomerStatus(CustomerStatus.ACTIVE);
-        customer.setPaymentMethods(List.of());
-        customer.setAddressLine1("1 Main Street");
-        customer.setAddressLine2("Apt 2");
-        customer.setCity("Sao Paulo");
-        customer.setStateProvince("SP");
-        customer.setPostalCode("01000-000");
-        customer.setCountry("Brazil");
-        customer.setCreatedAt(Instant.parse("2026-01-01T00:00:00Z"));
-        customer.setModifiedAt(Instant.parse("2026-01-02T00:00:00Z"));
-        return customer;
-    }
-
-    private static CustomerEntity customerEntity(final String firstName) {
-        final CustomerDTO customer = customerDto(firstName);
-        return new CustomerEntity(customer.getId(), customer.getFirstName(), customer.getLastName(),
-                customer.getEmail(), customer.getCustomerStatus(), List.of(), customer.getAddressLine1(),
-                customer.getAddressLine2(), customer.getCity(), customer.getStateProvince(),
-                customer.getPostalCode(), customer.getCountry(), customer.getCreatedAt(), customer.getModifiedAt());
     }
 }

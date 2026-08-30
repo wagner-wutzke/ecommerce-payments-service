@@ -103,7 +103,7 @@ public class KafkaConfig {
 
         factory.setCommonErrorHandler(
                 new DefaultErrorHandler(new DeadLetterPublishingRecoverer(kafkaTemplate),
-                        new FixedBackOff(2000L, retries)));
+                                        new FixedBackOff(2000L, retries)));
         return factory;
     }
 }

@@ -26,13 +26,13 @@ class PaymentRepositoryTest {
         final Instant createdAt = Instant.parse("2026-01-01T00:00:00Z");
 
         jdbcTemplate.update("""
-                        INSERT INTO payments (
-                            id, order_id, customer_id, payment_method_id, transaction_id,
-                            payment_token, amount, payment_method, payment_status, created_at
-                        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                        """,
-                paymentId, orderId, customerId, paymentMethodId, "TX-1", "TOKEN-1",
-                10.00, "PIX", "PENDING", createdAt);
+                                    INSERT INTO payments (
+                                        id, order_id, customer_id, payment_method_id, transaction_id,
+                                        payment_token, amount, payment_method, payment_status, created_at
+                                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                                    """,
+                            paymentId, orderId, customerId, paymentMethodId, "TX-1", "TOKEN-1",
+                            10.00, "PIX", "PENDING", createdAt);
 
         assertThat(repository.findById(paymentId))
                 .get()
