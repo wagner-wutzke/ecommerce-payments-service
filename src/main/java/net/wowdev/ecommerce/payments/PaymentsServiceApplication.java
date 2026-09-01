@@ -7,7 +7,7 @@ import org.springframework.boot.persistence.autoconfigure.EntityScan;
 @SpringBootApplication
 @EntityScan(basePackages = "net.wowdev.ecommerce.domain.entity")
 public class PaymentsServiceApplication {
-    public static void main(final String[] args) {
-        SpringApplication.run(PaymentsServiceApplication.class, args);
-    }
+  public static void main(final String[] args) {
+    SpringApplication.run(PaymentsServiceApplication.class, args);
+  }
 }
