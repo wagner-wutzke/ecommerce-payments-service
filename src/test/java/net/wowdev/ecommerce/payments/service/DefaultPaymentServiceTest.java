@@ -7,6 +7,8 @@ import static org.mockito.Mockito.*;
 
 import java.util.Optional;
 import java.util.UUID;
+import net.wowdev.ecommerce.datareplication.service.CustomerReplicationService;
+import net.wowdev.ecommerce.datareplication.service.PaymentMethodReplicationService;
 import net.wowdev.ecommerce.domain.dto.PaymentDTO;
 import net.wowdev.ecommerce.domain.entity.PaymentEntity;
 import net.wowdev.ecommerce.payments.TestFixtures;

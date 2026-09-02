@@ -4,6 +4,9 @@ import static org.mockito.Mockito.*;
 
 import java.time.Instant;
 import java.util.UUID;
+import net.wowdev.ecommerce.datareplication.service.CustomerReplicationService;
+import net.wowdev.ecommerce.datareplication.service.OrderReplicationService;
+import net.wowdev.ecommerce.datareplication.service.PaymentMethodReplicationService;
 import net.wowdev.ecommerce.domain.events.*;
 import net.wowdev.ecommerce.payments.TestFixtures;
 import net.wowdev.ecommerce.payments.service.*;

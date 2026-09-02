@@ -26,11 +26,12 @@
 
     <dependencies>
         <dependency>
-            <groupId>net.wowdev.ecommerce</groupId>
-            <artifactId>domain</artifactId>
-            <version>1.0.0-SNAPSHOT</version>
+          <groupId>net.wowdev.ecommerce</groupId>
+          <artifactId>data-replication</artifactId>
+          <version>1.0.0-SNAPSHOT</version>
         </dependency>
-        <dependency>
+
+      <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-webmvc</artifactId>
         </dependency>

@@ -2,13 +2,13 @@ package net.wowdev.ecommerce.payments.messaging;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import net.wowdev.ecommerce.datareplication.service.CustomerReplicationServiceInterface;
+import net.wowdev.ecommerce.datareplication.service.OrderReplicationServiceInterface;
+import net.wowdev.ecommerce.datareplication.service.PaymentMethodReplicationServiceInterface;
 import net.wowdev.ecommerce.domain.events.CustomerLoadedEvent;
 import net.wowdev.ecommerce.domain.events.OrderCreatedEvent;
 import net.wowdev.ecommerce.domain.events.OrderProcessingStartedEvent;
 import net.wowdev.ecommerce.domain.events.PaymentMethodLoadedEvent;
-import net.wowdev.ecommerce.payments.service.CustomerReplicationService;
-import net.wowdev.ecommerce.payments.service.OrderReplicationService;
-import net.wowdev.ecommerce.payments.service.PaymentMethodReplicationService;
 import net.wowdev.ecommerce.payments.service.PaymentService;
 import org.springframework.kafka.annotation.KafkaHandler;
 import org.springframework.kafka.annotation.KafkaListener;
@@ -23,9 +23,9 @@ import org.springframework.stereotype.Component;
     containerFactory = "kafkaListenerContainerFactory")
 public class PaymentConsumer {
 
-  private final CustomerReplicationService customerDataReplicationService;
-  private final OrderReplicationService orderReplicationService;
-  private final PaymentMethodReplicationService paymentMethodReplicationService;
+  private final CustomerReplicationServiceInterface customerReplicationService;
+  private final OrderReplicationServiceInterface orderReplicationService;
+  private final PaymentMethodReplicationServiceInterface paymentMethodReplicationService;
   private final PaymentService paymentService;
 
   @KafkaHandler
@@ -37,7 +37,7 @@ public class PaymentConsumer {
   @KafkaHandler
   public void handleCustomerLoaded(CustomerLoadedEvent event) {
     log.debug(">>>> Processing CustomerLoadedEvent: {}", event.eventId());
-    customerDataReplicationService.replicate(event.customerDTO());
+    customerReplicationService.replicate(event.customerDTO());
   }
 
   @KafkaHandler

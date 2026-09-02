@@ -5,8 +5,6 @@ import java.net.URI;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import net.wowdev.ecommerce.domain.dto.PaymentDTO;
-import net.wowdev.ecommerce.payments.service.PaymentMethodNotFoundException;
-import net.wowdev.ecommerce.payments.service.PaymentMethodReplicationService;
 import net.wowdev.ecommerce.payments.service.PaymentNotFoundException;
 import net.wowdev.ecommerce.payments.service.PaymentService;
 import org.springframework.data.domain.Page;

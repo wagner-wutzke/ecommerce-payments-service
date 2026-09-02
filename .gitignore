@@ -1,6 +1,6 @@
 /.idea/
 /.mvn/
 /target/
-/payments.iml
+/payments*.iml
 /data/payments-db.mv.db
 /data/payments-db.trace.db
