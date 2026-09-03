@@ -5,8 +5,8 @@ import static org.mockito.Mockito.*;
 import java.time.Instant;
 import java.util.UUID;
 import net.wowdev.ecommerce.datareplication.service.CustomerReplicationService;
-import net.wowdev.ecommerce.datareplication.service.OrderReplicationService;
 import net.wowdev.ecommerce.datareplication.service.PaymentMethodReplicationService;
+import net.wowdev.ecommerce.domain.dto.OrderDTO;
 import net.wowdev.ecommerce.domain.events.*;
 import net.wowdev.ecommerce.payments.TestFixtures;
 import net.wowdev.ecommerce.payments.service.*;
@@ -17,34 +17,24 @@ class PaymentMessagingTest {
   @Test
   void delegatesIncomingEvents() {
     final CustomerReplicationService customers = mock(CustomerReplicationService.class);
-    final OrderReplicationService orders = mock(OrderReplicationService.class);
     final PaymentMethodReplicationService methods = mock(PaymentMethodReplicationService.class);
     final PaymentService paymentService = mock(PaymentService.class);
-    final PaymentConsumer consumer =
-        new PaymentConsumer(customers, orders, methods, paymentService);
-    consumer.handleCustomerLoaded(
+    final PaymentConsumer consumer = new PaymentConsumer(customers, methods, paymentService);
+    consumer.handle(
         new CustomerLoadedEvent(
             UUID.randomUUID(),
             "tx",
             new net.wowdev.ecommerce.domain.dto.CustomerDTO(),
             Instant.now(),
-            PaymentProducer.ORIGIN_SERVICE));
-    consumer.handleOrderCreated(
-        new OrderCreatedEvent(
-            UUID.randomUUID(),
-            "tx",
-            new net.wowdev.ecommerce.domain.dto.OrderDTO(),
-            Instant.now(),
-            PaymentProducer.ORIGIN_SERVICE));
-    consumer.handlePaymentMethodLoaded(
+            PaymentService.ORIGIN_SERVICE));
+    consumer.handle(
         new PaymentMethodLoadedEvent(
             UUID.randomUUID(),
             "tx",
             new net.wowdev.ecommerce.domain.dto.PaymentMethodDTO(),
             Instant.now(),
-            PaymentProducer.ORIGIN_SERVICE));
+            PaymentService.ORIGIN_SERVICE));
     verify(customers).replicate(any());
-    verify(orders).replicate(any());
     verify(methods).replicate(any());
   }
 
@@ -55,7 +45,12 @@ class PaymentMessagingTest {
     final var payment = TestFixtures.paymentDto();
     producer.publish(
         new PaymentCompletedEvent(
-            UUID.randomUUID(), "tx", payment, Instant.now(), PaymentProducer.ORIGIN_SERVICE));
+            UUID.randomUUID(),
+            "tx",
+            new OrderDTO(),
+            payment,
+            Instant.now(),
+            PaymentService.ORIGIN_SERVICE));
     verify(template).send(eq("payment-events"), eq(payment.getId().toString()), any());
   }
 }

@@ -3,11 +3,9 @@ package net.wowdev.ecommerce.payments.messaging;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.wowdev.ecommerce.datareplication.service.CustomerReplicationServiceInterface;
-import net.wowdev.ecommerce.datareplication.service.OrderReplicationServiceInterface;
 import net.wowdev.ecommerce.datareplication.service.PaymentMethodReplicationServiceInterface;
 import net.wowdev.ecommerce.domain.events.CustomerLoadedEvent;
-import net.wowdev.ecommerce.domain.events.OrderCreatedEvent;
-import net.wowdev.ecommerce.domain.events.OrderProcessingStartedEvent;
+import net.wowdev.ecommerce.domain.events.InventoryUpdatedEvent;
 import net.wowdev.ecommerce.domain.events.PaymentMethodLoadedEvent;
 import net.wowdev.ecommerce.payments.service.PaymentService;
 import org.springframework.kafka.annotation.KafkaHandler;
@@ -19,37 +17,32 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 @KafkaListener(
     groupId = "${spring.kafka.consumer.group-id}",
-    topics = { "${app.kafka.customer-events-topic}", "${app.kafka.order-events-topic}" },
+    topics = {
+      "${app.kafka.customers-topic}",
+      "${app.kafka.inventory-topic}"
+    },
     containerFactory = "kafkaListenerContainerFactory")
 public class PaymentConsumer {
 
   private final CustomerReplicationServiceInterface customerReplicationService;
-  private final OrderReplicationServiceInterface orderReplicationService;
   private final PaymentMethodReplicationServiceInterface paymentMethodReplicationService;
   private final PaymentService paymentService;
 
   @KafkaHandler
-  public void handleOrderCreated(OrderCreatedEvent event) {
-    log.debug(">>>> Processing OrderCreatedEvent: {}", event.eventId());
-    orderReplicationService.replicate(event.orderDTO());
-  }
-
-  @KafkaHandler
-  public void handleCustomerLoaded(CustomerLoadedEvent event) {
+  public void handle(CustomerLoadedEvent event) {
     log.debug(">>>> Processing CustomerLoadedEvent: {}", event.eventId());
     customerReplicationService.replicate(event.customerDTO());
   }
 
   @KafkaHandler
-  public void handlePaymentMethodLoaded(PaymentMethodLoadedEvent event) {
+  public void handle(PaymentMethodLoadedEvent event) {
     log.debug(">>>> Processing PaymentMethodLoadedEvent: {}", event.eventId());
     paymentMethodReplicationService.replicate(event.paymentMethodDTO());
   }
 
   @KafkaHandler
-  public void handleOrderProcessingStarted(OrderProcessingStartedEvent event) {
-    log.debug(">>>> Processing OrderProcessingStartedEvent: {}", event.eventId());
+  public void handle(InventoryUpdatedEvent event) {
+    log.debug(">>>> Processing InventoryUpdatedEvent: {}", event.eventId());
     paymentService.process(event.orderDTO());
   }
-
 }

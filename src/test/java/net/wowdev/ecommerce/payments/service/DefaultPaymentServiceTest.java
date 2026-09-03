@@ -8,6 +8,7 @@ import static org.mockito.Mockito.*;
 import java.util.Optional;
 import java.util.UUID;
 import net.wowdev.ecommerce.datareplication.service.CustomerReplicationService;
+import net.wowdev.ecommerce.datareplication.service.OrderReplicationService;
 import net.wowdev.ecommerce.datareplication.service.PaymentMethodReplicationService;
 import net.wowdev.ecommerce.domain.dto.PaymentDTO;
 import net.wowdev.ecommerce.domain.entity.PaymentEntity;
@@ -25,6 +26,7 @@ class DefaultPaymentServiceTest {
   private DefaultPaymentService service;
   private PaymentMethodReplicationService paymentMethodRepository;
   private CustomerReplicationService customerReplicationService;
+  private OrderReplicationService orderReplicationService;
   private PaymentProducer paymentProducer;
 
   @BeforeEach
@@ -32,7 +34,10 @@ class DefaultPaymentServiceTest {
     repository = mock(PaymentRepository.class);
     service =
         new DefaultPaymentService(
-            repository, paymentMethodRepository, customerReplicationService, paymentProducer);
+            repository,
+            paymentMethodRepository,
+            customerReplicationService,
+            paymentProducer);
   }
 
   @Test
@@ -51,7 +56,7 @@ class DefaultPaymentServiceTest {
     when(repository.findById(ID)).thenReturn(Optional.empty());
     assertThatThrownBy(() -> service.findById(ID))
         .isInstanceOf(PaymentNotFoundException.class)
-        .hasMessage("Payment not found: " + ID);
+        .hasMessage("Payment record not found: " + ID);
     assertThatThrownBy(() -> service.update(ID, TestFixtures.paymentDto()))
         .isInstanceOf(PaymentNotFoundException.class);
   }
@@ -76,6 +81,6 @@ class DefaultPaymentServiceTest {
     verify(repository).deleteById(ID);
     assertThatThrownBy(() -> service.delete(ID))
         .isInstanceOf(PaymentNotFoundException.class)
-        .hasMessage("Payment not found: " + ID);
+        .hasMessage("Payment record not found: " + ID);
   }
 }

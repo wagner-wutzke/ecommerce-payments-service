@@ -8,6 +8,9 @@ import org.springframework.data.domain.Pageable;
 import java.util.UUID;
 
 public interface PaymentService {
+
+  String ORIGIN_SERVICE = "PAYMENTS-SERVICE";
+
   PaymentDTO findById(UUID id);
 
   Page<PaymentDTO> findAll(Pageable pageable);

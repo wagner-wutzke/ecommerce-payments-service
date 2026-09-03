@@ -17,7 +17,7 @@ spring:
     console:
       enabled: ${H2_CONSOLE_ENABLED:true}
   kafka:
-    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092, localhost:9094, localhost:9096}
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
     consumer:
       group-id: ${KAFKA_CONSUMER_GROUP:payments-events-group.v1}
       properties:
@@ -34,11 +34,18 @@ spring:
 
 app:
   kafka:
-    payment-events-topic: ${KAFKA_PAYMENT_CHANGES_TOPIC:payment-events-topic.v1}
-    order-events-topic: ${KAFKA_PAYMENT_CHANGES_TOPIC:order-events-topic.v1}
-    customer-events-topic: ${KAFKA_PAYMENT_CHANGES_TOPIC:customer-events-topic.v1}
+    payments-topic: ${KAFKA_PAYMENTS_TOPIC:payments-topic.v1}
+    orders-topic: ${KAFKA_ORDERS_TOPIC:orders-topic.v1}
+    customers-topic: ${KAFKA_CUSTOMERS_TOPIC:customers-topic.v1}
+    inventory-topic: ${KAFKA_INVENTORY_TOPIC:inventory-topic.v1}
 
 logging:
   level:
     org.hibernate.orm.jdbc.bind: INFO
+    org.apache.kafka.common: ERROR
+    org.apache.kafka.clients: ERROR
+    net.wowdev.ecommerce.orders: DEBUG
+    net.wowdev.ecommerce.customers: DEBUG
+    net.wowdev.ecommerce.inventory: DEBUG
     net.wowdev.ecommerce.payments: DEBUG
+    net.wowdev.ecommerce.datareplication: DEBUG

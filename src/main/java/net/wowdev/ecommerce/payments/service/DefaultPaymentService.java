@@ -14,6 +14,7 @@ import net.wowdev.ecommerce.domain.entity.PaymentEntity;
 import net.wowdev.ecommerce.domain.enums.PaymentMethod;
 import net.wowdev.ecommerce.domain.enums.PaymentStatus;
 import net.wowdev.ecommerce.domain.events.PaymentCompletedEvent;
+import net.wowdev.ecommerce.domain.events.PaymentFailedEvent;
 import net.wowdev.ecommerce.domain.mapper.PaymentMapper;
 import net.wowdev.ecommerce.payments.messaging.PaymentProducer;
 import net.wowdev.ecommerce.payments.repository.PaymentRepository;
@@ -80,31 +81,52 @@ public class DefaultPaymentService implements PaymentService {
   @Override
   @Transactional
   public void process(OrderDTO orderDTO) {
-    log.debug(">>>> Processing Payment started: {}", orderDTO.getId());
-    PaymentMethodDTO paymentMethodDTO = paymentMethodService.findById(orderDTO.getPaymentMethodId());
+    log.debug(">>>> Payment for order {} started.", orderDTO.getId());
+    log.debug(">>>> Payment logic still need to be implemented...");
+
+    PaymentMethodDTO paymentMethodDTO =
+        paymentMethodService.findById(orderDTO.getPaymentMethodId());
     CustomerDTO customerDTO = customerService.findById(orderDTO.getCustomerId());
-    PaymentDTO paymentDTO = new PaymentDTO(
-        null,
-        orderDTO.getId(),
-        customerDTO.getId(),
-        paymentMethodDTO.getId(),
-        "payment-token",
-        PaymentStatus.PENDING,
-        orderDTO.getTotalAmount(),
-        PaymentMethod.CREDIT_CARD,
-        null,
-        null
-    );
-    PaymentDTO createdDTO = this.create(paymentDTO);
-    log.debug(">>>> Processing Payment finished successfully: {}", orderDTO.getId());
-    paymentProducer.publish(
-        new PaymentCompletedEvent(
-            UUID.randomUUID(),
-            orderDTO.getId().toString(),
-            createdDTO,
-            Instant.now(),
-            PaymentProducer.ORIGIN_SERVICE
-        )
-    );
+
+    PaymentDTO paymentDTO =
+        new PaymentDTO(
+            null,
+            orderDTO.getId(),
+            orderDTO.getCustomerId(),
+            orderDTO.getPaymentMethodId(),
+            "payment-token",
+            "tx-" + orderDTO.getId(),
+            PaymentStatus.PENDING,
+            orderDTO.getTotalAmount(),
+            PaymentMethod.CREDIT_CARD,
+            null,
+            null);
+
+    try {
+      // TODO try to add some logic here for rejecting payment on certain conditions
+      log.debug(">>>> Payment for order {} successfully finished.", orderDTO.getId());
+      paymentDTO.setPaymentStatus(PaymentStatus.AUTHORIZED);
+      PaymentDTO createdDTO = this.create(paymentDTO);
+      paymentProducer.publish(
+          new PaymentCompletedEvent(
+              UUID.randomUUID(),
+              orderDTO.getId().toString(),
+              orderDTO,
+              paymentDTO,
+              Instant.now(),
+              PaymentService.ORIGIN_SERVICE));
+    } catch (Exception e) {
+      log.debug(">>>> Payment for order {} failed.", orderDTO.getId());
+      paymentDTO.setPaymentStatus(PaymentStatus.FAILED);
+      paymentRepository.save(PaymentMapper.toEntity(paymentDTO));
+      paymentProducer.publish(
+          new PaymentFailedEvent(
+              UUID.randomUUID(),
+              orderDTO.getId().toString(),
+              orderDTO,
+              "Payment failed: " + e.getMessage(),
+              Instant.now(),
+              PaymentService.ORIGIN_SERVICE));
+    }
   }
 }
