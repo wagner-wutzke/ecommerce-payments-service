@@ -1,11 +1,10 @@
 package net.wowdev.ecommerce.payments.service;
 
+import java.util.UUID;
 import net.wowdev.ecommerce.domain.dto.OrderDTO;
 import net.wowdev.ecommerce.domain.dto.PaymentDTO;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-
-import java.util.UUID;
 
 public interface PaymentService {
 

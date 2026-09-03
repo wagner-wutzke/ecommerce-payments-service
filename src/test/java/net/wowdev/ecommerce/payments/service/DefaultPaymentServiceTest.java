@@ -34,10 +34,7 @@ class DefaultPaymentServiceTest {
     repository = mock(PaymentRepository.class);
     service =
         new DefaultPaymentService(
-            repository,
-            paymentMethodRepository,
-            customerReplicationService,
-            paymentProducer);
+            repository, paymentMethodRepository, customerReplicationService, paymentProducer);
   }
 
   @Test
