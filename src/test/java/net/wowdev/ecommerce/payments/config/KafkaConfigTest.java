@@ -81,7 +81,6 @@ class KafkaConfigTest {
     assertThat(ReflectionTestUtils.getField(listenerFactory, "concurrency")).isEqualTo(3);
     assertThat(ReflectionTestUtils.getField(listenerFactory, "commonErrorHandler"))
         .isInstanceOf(DefaultErrorHandler.class);
-    assertThat(config.multiTypeConverter()).isNotNull();
   }
 
   private record MapAssertions(java.util.Map<String, Object> values) {

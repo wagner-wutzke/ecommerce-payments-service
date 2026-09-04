@@ -12,6 +12,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.kafka.annotation.EnableKafka;
 import org.springframework.kafka.config.ConcurrentKafkaListenerContainerFactory;
 import org.springframework.kafka.core.*;
+import org.springframework.kafka.listener.ContainerProperties;
 import org.springframework.kafka.listener.DeadLetterPublishingRecoverer;
 import org.springframework.kafka.listener.DefaultErrorHandler;
 import org.springframework.kafka.support.converter.RecordMessageConverter;
@@ -101,15 +102,11 @@ public class KafkaConfig {
     final var factory = new ConcurrentKafkaListenerContainerFactory<String, Object>();
     factory.setConsumerFactory(orderConsumerFactory);
     factory.setConcurrency(3);
-
-    factory.setCommonErrorHandler(
+    factory.getContainerProperties().setAckMode(ContainerProperties.AckMode.RECORD);
+    DefaultErrorHandler defaultErrorHandler =
         new DefaultErrorHandler(
-            new DeadLetterPublishingRecoverer(kafkaTemplate), new FixedBackOff(2000L, retries)));
+            new DeadLetterPublishingRecoverer(kafkaTemplate), new FixedBackOff(2000L, retries));
+    factory.setCommonErrorHandler(defaultErrorHandler);
     return factory;
-  }
-
-  @Bean
-  public RecordMessageConverter multiTypeConverter() {
-    return new StringJacksonJsonMessageConverter();
   }
 }
