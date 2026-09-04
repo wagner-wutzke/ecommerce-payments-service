@@ -8,5 +8,6 @@ class PersistenceConfigTest {
   @Test
   void createsPersistenceConfiguration() {
     assertThat(new PersistenceConfig()).isNotNull();
+    assertThat(new DataReplicationConfig()).isNotNull();
   }
 }

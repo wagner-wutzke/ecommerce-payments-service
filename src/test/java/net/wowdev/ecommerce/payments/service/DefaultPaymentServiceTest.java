@@ -5,18 +5,25 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
+import java.math.BigDecimal;
+import java.time.Instant;
 import java.util.Optional;
 import java.util.UUID;
 import net.wowdev.ecommerce.datareplication.service.CustomerReplicationService;
 import net.wowdev.ecommerce.datareplication.service.OrderReplicationService;
 import net.wowdev.ecommerce.datareplication.service.PaymentMethodReplicationService;
+import net.wowdev.ecommerce.domain.dto.OrderDTO;
 import net.wowdev.ecommerce.domain.dto.PaymentDTO;
 import net.wowdev.ecommerce.domain.entity.PaymentEntity;
+import net.wowdev.ecommerce.domain.events.PaymentCompletedEvent;
+import net.wowdev.ecommerce.domain.events.PaymentFailedEvent;
 import net.wowdev.ecommerce.payments.TestFixtures;
 import net.wowdev.ecommerce.payments.messaging.PaymentProducer;
 import net.wowdev.ecommerce.payments.repository.PaymentRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.Answers;
+import org.mockito.MockedStatic;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 
@@ -32,6 +39,9 @@ class DefaultPaymentServiceTest {
   @BeforeEach
   void setUp() {
     repository = mock(PaymentRepository.class);
+    paymentMethodRepository = mock(PaymentMethodReplicationService.class);
+    customerReplicationService = mock(CustomerReplicationService.class);
+    paymentProducer = mock(PaymentProducer.class);
     service =
         new DefaultPaymentService(
             repository, paymentMethodRepository, customerReplicationService, paymentProducer);
@@ -79,5 +89,50 @@ class DefaultPaymentServiceTest {
     assertThatThrownBy(() -> service.delete(ID))
         .isInstanceOf(PaymentNotFoundException.class)
         .hasMessage("Payment record not found: " + ID);
+  }
+
+  @Test
+  void processesAuthorizedPaymentAndPublishesCompletion() {
+    final OrderDTO order = order();
+    final PaymentEntity saved = TestFixtures.paymentEntity();
+    final Instant oddSecond = Instant.parse("2026-01-01T00:00:01Z");
+    when(repository.save(any(PaymentEntity.class))).thenReturn(saved);
+
+    try (MockedStatic<Instant> clock = mockStatic(Instant.class, Answers.CALLS_REAL_METHODS)) {
+      clock.when(Instant::now).thenReturn(oddSecond);
+
+      service.process(order);
+
+      verify(repository).save(any(PaymentEntity.class));
+      verify(paymentProducer).publish(any(PaymentCompletedEvent.class));
+      verify(paymentProducer, never()).publish(any(PaymentFailedEvent.class));
+    }
+  }
+
+  @Test
+  void processesFailedPaymentAndPublishesFailure() {
+    final OrderDTO order = order();
+    final Instant evenSecond = Instant.parse("2026-01-01T00:00:00Z");
+    when(repository.save(any(PaymentEntity.class)))
+        .thenAnswer(invocation -> invocation.getArgument(0));
+
+    try (MockedStatic<Instant> clock = mockStatic(Instant.class, Answers.CALLS_REAL_METHODS)) {
+      clock.when(Instant::now).thenReturn(evenSecond);
+
+      service.process(order);
+
+      verify(repository).save(any(PaymentEntity.class));
+      verify(paymentProducer).publish(any(PaymentFailedEvent.class));
+      verify(paymentProducer, never()).publish(any(PaymentCompletedEvent.class));
+    }
+  }
+
+  private static OrderDTO order() {
+    final OrderDTO order = new OrderDTO();
+    order.setId(UUID.fromString("22222222-2222-2222-2222-222222222222"));
+    order.setCustomerId(UUID.fromString("33333333-3333-3333-3333-333333333333"));
+    order.setPaymentMethodId(UUID.fromString("44444444-4444-4444-4444-444444444444"));
+    order.setTotalAmount(new BigDecimal("25.00"));
+    return order;
   }
 }
