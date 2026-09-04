@@ -12,6 +12,7 @@ import net.wowdev.ecommerce.domain.dto.PaymentDTO;
 import net.wowdev.ecommerce.domain.entity.PaymentEntity;
 import net.wowdev.ecommerce.domain.enums.PaymentMethod;
 import net.wowdev.ecommerce.domain.enums.PaymentStatus;
+import net.wowdev.ecommerce.domain.events.InventoryUpdateFailedEvent;
 import net.wowdev.ecommerce.domain.events.PaymentCompletedEvent;
 import net.wowdev.ecommerce.domain.events.PaymentFailedEvent;
 import net.wowdev.ecommerce.domain.mapper.PaymentMapper;
@@ -103,8 +104,7 @@ public class DefaultPaymentService implements PaymentService {
 
     try {
 
-      boolean shallFail = paymentFailed();
-      if (shallFail) {
+      if (processFails()) {
         throw new RuntimeException("Payment processing returned following status: UNAUTHORIZED");
       }
       log.debug(">> Payment for order {} successfully finished.", orderDTO.getId());
@@ -136,10 +136,24 @@ public class DefaultPaymentService implements PaymentService {
     }
   }
 
-  private boolean paymentFailed() {
+  @Transactional
+  @Override
+  public void compensate(OrderDTO orderDTO, String reason) {
+    log.debug(">> Compensating payment for order: {}", orderDTO.getId());
+    paymentProducer.publish(
+        new PaymentFailedEvent(
+            UUID.randomUUID(),
+            orderDTO.getId().toString(),
+            orderDTO,
+            reason,
+            Instant.now(),
+            ORIGIN_SERVICE));
+  }
+
+  private boolean processFails() {
     int second = Instant.now().atZone(ZoneId.systemDefault()).getSecond();
     boolean failed = second % 2 == 0;
-    log.debug(">> Payment condition for failing payment: {} % 2 == 0 => {}", second, failed);
+    log.debug(">> Runtime condition for failing process: [{} % 2 == 0 => {}]", second, failed);
     return failed;
   }
 }
