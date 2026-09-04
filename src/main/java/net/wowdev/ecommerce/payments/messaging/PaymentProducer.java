@@ -22,15 +22,15 @@ public class PaymentProducer {
     this.topic = topic;
   }
 
-  @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+  @TransactionalEventListener(phase = TransactionPhase.AFTER_COMPLETION)
   public void publish(PaymentCompletedEvent event) {
-    log.debug(">>>> Publishing PaymentCompletedEvent: {}", event.eventId());
+    log.debug(">> Publishing PaymentCompletedEvent: {}", event.eventId());
     template.send(topic, event.paymentDTO().getId().toString(), event);
   }
 
-  @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+  @TransactionalEventListener(phase = TransactionPhase.AFTER_COMPLETION)
   public void publish(PaymentFailedEvent event) {
-    log.debug(">>>> Publishing PaymentFailedEvent: {}", event.eventId());
+    log.debug(">> Publishing PaymentFailedEvent: {}", event.eventId());
     template.send(topic, event.orderDTO().getId().toString(), event);
   }
 }

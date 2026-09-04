@@ -1,6 +1,8 @@
 package net.wowdev.ecommerce.payments.service;
 
 import java.time.Instant;
+import java.time.ZoneId;
+import java.time.temporal.Temporal;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -81,12 +83,12 @@ public class DefaultPaymentService implements PaymentService {
   @Override
   @Transactional
   public void process(OrderDTO orderDTO) {
-    log.debug(">>>> Payment for order {} started.", orderDTO.getId());
-    log.debug(">>>> Payment logic still need to be implemented...");
+    log.debug(">> Payment for order {} started.", orderDTO.getId());
+    log.debug(">> Payment logic still need to be implemented...");
 
-    PaymentMethodDTO paymentMethodDTO =
-        paymentMethodService.findById(orderDTO.getPaymentMethodId());
-    CustomerDTO customerDTO = customerService.findById(orderDTO.getCustomerId());
+//    PaymentMethodDTO paymentMethodDTO =
+//        paymentMethodService.findById(orderDTO.getPaymentMethodId());
+//    CustomerDTO customerDTO = customerService.findById(orderDTO.getCustomerId());
 
     PaymentDTO paymentDTO =
         new PaymentDTO(
@@ -103,8 +105,14 @@ public class DefaultPaymentService implements PaymentService {
             null);
 
     try {
+
+      boolean shallFail =  paymentFailed();
+      if (shallFail) {
+        throw new RuntimeException("Payment processing returned following status: UNAUTHORIZED");
+      }
+      log.debug(">> Payment for order {} successfully finished.", orderDTO.getId());
+
       // TODO try to add some logic here for rejecting payment on certain conditions
-      log.debug(">>>> Payment for order {} successfully finished.", orderDTO.getId());
       paymentDTO.setPaymentStatus(PaymentStatus.AUTHORIZED);
       PaymentDTO createdDTO = this.create(paymentDTO);
       paymentProducer.publish(
@@ -112,11 +120,12 @@ public class DefaultPaymentService implements PaymentService {
               UUID.randomUUID(),
               orderDTO.getId().toString(),
               orderDTO,
-              paymentDTO,
+              createdDTO,
               Instant.now(),
               PaymentService.ORIGIN_SERVICE));
-    } catch (Exception e) {
-      log.debug(">>>> Payment for order {} failed.", orderDTO.getId());
+
+    } catch (RuntimeException e) {
+      log.debug(">> Payment for order {} failed.", orderDTO.getId());
       paymentDTO.setPaymentStatus(PaymentStatus.FAILED);
       paymentRepository.save(PaymentMapper.toEntity(paymentDTO));
       paymentProducer.publish(
@@ -128,5 +137,14 @@ public class DefaultPaymentService implements PaymentService {
               Instant.now(),
               PaymentService.ORIGIN_SERVICE));
     }
+  }
+
+  private boolean paymentFailed() {
+    int second = Instant.now()
+        .atZone(ZoneId.systemDefault())
+        .getSecond();
+    boolean failed = second % 2 == 0;
+    log.debug(">> Payment condition for failing payment: {} % 2 == 0 => {}", second, failed);
+    return failed;
   }
 }

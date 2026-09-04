@@ -27,19 +27,28 @@ public class PaymentConsumer {
 
   @KafkaHandler
   public void handle(CustomerLoadedEvent event) {
-    log.debug(">>>> Processing CustomerLoadedEvent: {}", event.eventId());
+    log.debug(
+        ">> Processing CustomerLoadedEvent sent by {}. Event id: {}",
+        event.origin(),
+        event.eventId());
     customerReplicationService.replicate(event.customerDTO());
   }
 
   @KafkaHandler
   public void handle(PaymentMethodLoadedEvent event) {
-    log.debug(">>>> Processing PaymentMethodLoadedEvent: {}", event.eventId());
+    log.debug(
+        ">> Processing PaymentMethodLoadedEvent sent by {}. Event id: {}",
+        event.origin(),
+        event.eventId());
     paymentMethodReplicationService.replicate(event.paymentMethodDTO());
   }
 
   @KafkaHandler
   public void handle(InventoryUpdatedEvent event) {
-    log.debug(">>>> Processing InventoryUpdatedEvent: {}", event.eventId());
+    log.debug(
+        ">> Processing InventoryUpdatedEvent sent by {}. Event id: {}",
+        event.origin(),
+        event.origin());
     paymentService.process(event.orderDTO());
   }
 }
