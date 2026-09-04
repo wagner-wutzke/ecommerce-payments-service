@@ -2,16 +2,13 @@ package net.wowdev.ecommerce.payments.service;
 
 import java.time.Instant;
 import java.time.ZoneId;
-import java.time.temporal.Temporal;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.wowdev.ecommerce.datareplication.service.CustomerReplicationService;
 import net.wowdev.ecommerce.datareplication.service.PaymentMethodReplicationService;
-import net.wowdev.ecommerce.domain.dto.CustomerDTO;
 import net.wowdev.ecommerce.domain.dto.OrderDTO;
 import net.wowdev.ecommerce.domain.dto.PaymentDTO;
-import net.wowdev.ecommerce.domain.dto.PaymentMethodDTO;
 import net.wowdev.ecommerce.domain.entity.PaymentEntity;
 import net.wowdev.ecommerce.domain.enums.PaymentMethod;
 import net.wowdev.ecommerce.domain.enums.PaymentStatus;
@@ -86,9 +83,9 @@ public class DefaultPaymentService implements PaymentService {
     log.debug(">> Payment for order {} started.", orderDTO.getId());
     log.debug(">> Payment logic still need to be implemented...");
 
-//    PaymentMethodDTO paymentMethodDTO =
-//        paymentMethodService.findById(orderDTO.getPaymentMethodId());
-//    CustomerDTO customerDTO = customerService.findById(orderDTO.getCustomerId());
+    //    PaymentMethodDTO paymentMethodDTO =
+    //        paymentMethodService.findById(orderDTO.getPaymentMethodId());
+    //    CustomerDTO customerDTO = customerService.findById(orderDTO.getCustomerId());
 
     PaymentDTO paymentDTO =
         new PaymentDTO(
@@ -106,7 +103,7 @@ public class DefaultPaymentService implements PaymentService {
 
     try {
 
-      boolean shallFail =  paymentFailed();
+      boolean shallFail = paymentFailed();
       if (shallFail) {
         throw new RuntimeException("Payment processing returned following status: UNAUTHORIZED");
       }
@@ -140,9 +137,7 @@ public class DefaultPaymentService implements PaymentService {
   }
 
   private boolean paymentFailed() {
-    int second = Instant.now()
-        .atZone(ZoneId.systemDefault())
-        .getSecond();
+    int second = Instant.now().atZone(ZoneId.systemDefault()).getSecond();
     boolean failed = second % 2 == 0;
     log.debug(">> Payment condition for failing payment: {} % 2 == 0 => {}", second, failed);
     return failed;
