@@ -8,7 +8,7 @@ package_name = "net.wowdev.ecommerce.payments"
 domain_object = "Payment"
 
 # The Kafka publishing topic name (e.g., product-change-topic)
-kafka_pub_topic = "payments-change-topic"
+kafka_pub_topic = "payments-topic.v1"
 
 kafka_bootstrap_servers = "localhost:9092"
 
