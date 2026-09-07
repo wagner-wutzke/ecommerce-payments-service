@@ -1,5 +1,5 @@
 server:
-  port: ${APP_PORT:9400}
+  port: ${APP_PORT:9030}
 spring:
   application:
     name: payments-service
