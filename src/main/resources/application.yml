@@ -45,8 +45,10 @@ logging:
     org.hibernate.orm.jdbc.bind: INFO
     org.apache.kafka.common: ERROR
     org.apache.kafka.clients: ERROR
-    net.wowdev.ecommerce.orders: DEBUG
-    net.wowdev.ecommerce.customers: DEBUG
-    net.wowdev.ecommerce.inventory: DEBUG
-    net.wowdev.ecommerce.payments: DEBUG
-    net.wowdev.ecommerce.datareplication: DEBUG
+    net.wowdev.ecommerce.orders: ${LOG_LEVEL_ORDERS_SERVICE:DEBUG}
+    net.wowdev.ecommerce.customers: ${LOG_LEVEL_CUSTOMERS_SERVICE:DEBUG}
+    net.wowdev.ecommerce.inventory: ${LOG_LEVEL_INVENTORY_SERVICE:DEBUG}
+    net.wowdev.ecommerce.payments: ${LOG_LEVEL_PAYMENTS_SERVICE:DEBUG}
+    net.wowdev.ecommerce.invoices: ${LOG_LEVEL_INVOICES_SERVICE:DEBUG}
+    net.wowdev.ecommerce.shipments: ${LOG_LEVEL_SHIPMENTS_SERVICE:DEBUG}
+    net.wowdev.ecommerce.datareplication: ${LOG_LEVEL_DATAREPLICATION:INFO}

@@ -8,7 +8,7 @@
   <artifactId>payments-service</artifactId>
   <version>1.0.0</version>
   <name>payments-service</name>
-  <description>payments-service REST and Kafka microservice.</description>
+  <description>E-Commerce Payments Microservice</description>
 
   <parent>
     <groupId>org.springframework.boot</groupId>
