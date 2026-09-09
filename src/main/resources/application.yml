@@ -34,11 +34,12 @@ spring:
 
 app:
   kafka:
-    payments-topic: ${KAFKA_PAYMENTS_TOPIC:payments-topic.v1}
     orders-topic: ${KAFKA_ORDERS_TOPIC:orders-topic.v1}
     customers-topic: ${KAFKA_CUSTOMERS_TOPIC:customers-topic.v1}
     inventory-topic: ${KAFKA_INVENTORY_TOPIC:inventory-topic.v1}
-    invoices-topic: ${KAFKA_INVENTORY_TOPIC:invoices-topic.v1}
+    payments-topic: ${KAFKA_PAYMENTS_TOPIC:payments-topic.v1}
+    invoices-topic: ${KAFKA_INVOICES_TOPIC:invoices-topic.v1}
+    shipments-topic: ${KAFKA_SHIPMENTS_TOPIC:shipments-topic.v1}
 
   service:
     payments.failing: ${SERVICE_PAYMENTS_FAILING:false}

@@ -137,7 +137,7 @@ public class PaymentServiceImpl implements PaymentService {
             UUID.randomUUID(),
             orderDTO.getId().toString(),
             orderDTO,
-            "Payment failed: " + reason,
+            reason,
             Instant.now(),
             PaymentService.ORIGIN_SERVICE));
   }
