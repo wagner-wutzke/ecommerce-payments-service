@@ -1,3 +1,4 @@
+DROP TABLE IF EXISTS orders;
 DROP TABLE IF EXISTS order_lines;
 DROP TABLE IF EXISTS inventory;
 DROP TABLE IF EXISTS invoices;

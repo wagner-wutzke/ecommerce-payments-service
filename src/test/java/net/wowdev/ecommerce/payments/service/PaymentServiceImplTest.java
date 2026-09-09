@@ -26,11 +26,12 @@ import org.mockito.Answers;
 import org.mockito.MockedStatic;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.test.util.ReflectionTestUtils;
 
-class DefaultPaymentServiceTest {
+class PaymentServiceImplTest {
   private static final UUID ID = TestFixtures.paymentDto().getId();
   private PaymentRepository repository;
-  private DefaultPaymentService service;
+  private PaymentServiceImpl service;
   private PaymentMethodReplicationService paymentMethodRepository;
   private CustomerReplicationService customerReplicationService;
   private OrderReplicationService orderReplicationService;
@@ -43,8 +44,9 @@ class DefaultPaymentServiceTest {
     customerReplicationService = mock(CustomerReplicationService.class);
     paymentProducer = mock(PaymentProducer.class);
     service =
-        new DefaultPaymentService(
+        new PaymentServiceImpl(
             repository, paymentMethodRepository, customerReplicationService, paymentProducer);
+    ReflectionTestUtils.setField(service, "serviceIsFailing", false);
   }
 
   @Test
@@ -112,12 +114,11 @@ class DefaultPaymentServiceTest {
   @Test
   void processesFailedPaymentAndPublishesFailure() {
     final OrderDTO order = order();
-    final Instant evenSecond = Instant.parse("2026-01-01T00:00:00Z");
+    ReflectionTestUtils.setField(service, "serviceIsFailing", true);
     when(repository.save(any(PaymentEntity.class)))
         .thenAnswer(invocation -> invocation.getArgument(0));
 
     try (MockedStatic<Instant> clock = mockStatic(Instant.class, Answers.CALLS_REAL_METHODS)) {
-      clock.when(Instant::now).thenReturn(evenSecond);
 
       service.process(order);
 

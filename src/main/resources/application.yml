@@ -40,6 +40,11 @@ app:
     inventory-topic: ${KAFKA_INVENTORY_TOPIC:inventory-topic.v1}
     invoices-topic: ${KAFKA_INVENTORY_TOPIC:invoices-topic.v1}
 
+  service:
+    payment.failing: ${SERVICE_PAYMENTS_FAILING:false}
+    invoices.failing: ${SERVICE_INVOICES_FAILING:false}
+    shipments.failing: ${SERVICE_SHIPMENTS_FAILING:false}
+
 logging:
   level:
     org.hibernate.orm.jdbc.bind: INFO

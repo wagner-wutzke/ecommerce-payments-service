@@ -1,7 +1,6 @@
 package net.wowdev.ecommerce.payments.service;
 
 import java.time.Instant;
-import java.time.ZoneId;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -12,12 +11,12 @@ import net.wowdev.ecommerce.domain.dto.PaymentDTO;
 import net.wowdev.ecommerce.domain.entity.PaymentEntity;
 import net.wowdev.ecommerce.domain.enums.PaymentMethod;
 import net.wowdev.ecommerce.domain.enums.PaymentStatus;
-import net.wowdev.ecommerce.domain.events.InventoryUpdateFailedEvent;
 import net.wowdev.ecommerce.domain.events.PaymentCompletedEvent;
 import net.wowdev.ecommerce.domain.events.PaymentFailedEvent;
 import net.wowdev.ecommerce.domain.mapper.PaymentMapper;
 import net.wowdev.ecommerce.payments.messaging.PaymentProducer;
 import net.wowdev.ecommerce.payments.repository.PaymentRepository;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -26,12 +25,15 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 @RequiredArgsConstructor
 @Slf4j
-public class DefaultPaymentService implements PaymentService {
+public class PaymentServiceImpl implements PaymentService {
 
   private final PaymentRepository paymentRepository;
   private final PaymentMethodReplicationService paymentMethodService;
   private final CustomerReplicationService customerService;
   private final PaymentProducer paymentProducer;
+
+  @Value(value = "${app.service.payments.failing}")
+  private boolean serviceIsFailing;
 
   @Override
   @Transactional(readOnly = true)
@@ -104,7 +106,7 @@ public class DefaultPaymentService implements PaymentService {
 
     try {
 
-      if (processFails()) {
+      if (serviceIsFailing()) {
         throw new RuntimeException("Payment processing returned following status: UNAUTHORIZED");
       }
       log.debug(">> Payment for order {} successfully finished.", orderDTO.getId());
@@ -112,27 +114,13 @@ public class DefaultPaymentService implements PaymentService {
       // TODO try to add some logic here for rejecting payment on certain conditions
       paymentDTO.setPaymentStatus(PaymentStatus.AUTHORIZED);
       PaymentDTO createdDTO = this.create(paymentDTO);
-      paymentProducer.publish(
-          new PaymentCompletedEvent(
-              UUID.randomUUID(),
-              orderDTO.getId().toString(),
-              orderDTO,
-              createdDTO,
-              Instant.now(),
-              PaymentService.ORIGIN_SERVICE));
+      publishPaymentCompletedEvent(orderDTO, createdDTO);
 
     } catch (RuntimeException e) {
       log.debug(">> Payment for order {} failed.", orderDTO.getId());
       paymentDTO.setPaymentStatus(PaymentStatus.FAILED);
       paymentRepository.save(PaymentMapper.toEntity(paymentDTO));
-      paymentProducer.publish(
-          new PaymentFailedEvent(
-              UUID.randomUUID(),
-              orderDTO.getId().toString(),
-              orderDTO,
-              "Payment failed: " + e.getMessage(),
-              Instant.now(),
-              PaymentService.ORIGIN_SERVICE));
+      publishPaymentFailedEvent(orderDTO, e.getMessage());
     }
   }
 
@@ -140,20 +128,40 @@ public class DefaultPaymentService implements PaymentService {
   @Override
   public void compensate(OrderDTO orderDTO, String reason) {
     log.debug(">> Compensating payment for order: {}", orderDTO.getId());
+    publishPaymentFailedEvent(orderDTO, reason);
+  }
+
+  private void publishPaymentFailedEvent(OrderDTO orderDTO, String reason) {
     paymentProducer.publish(
         new PaymentFailedEvent(
             UUID.randomUUID(),
             orderDTO.getId().toString(),
             orderDTO,
-            reason,
+            "Payment failed: " + reason,
             Instant.now(),
-            ORIGIN_SERVICE));
+            PaymentService.ORIGIN_SERVICE));
   }
 
-  private boolean processFails() {
-    int second = Instant.now().atZone(ZoneId.systemDefault()).getSecond();
-    boolean failed = second % 2 == 0;
-    log.debug(">> Runtime condition for failing process: [{} % 2 == 0 => {}]", second, failed);
-    return failed;
+  private void publishPaymentCompletedEvent(OrderDTO orderDTO, PaymentDTO createdDTO) {
+    paymentProducer.publish(
+        new PaymentCompletedEvent(
+            UUID.randomUUID(),
+            orderDTO.getId().toString(),
+            orderDTO,
+            createdDTO,
+            Instant.now(),
+            PaymentService.ORIGIN_SERVICE));
+  }
+
+  private boolean serviceIsFailing() {
+    if (this.serviceIsFailing) {
+      log.debug(
+          """
+          >> Service is configured o be failing when processing events. "
+             See "app.service.payments.failing" or "SERVICE_PAYMENTS_FAILING" environment var.
+          """
+      );
+    }
+    return this.serviceIsFailing;
   }
 }
