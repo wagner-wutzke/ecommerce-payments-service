@@ -11,8 +11,8 @@ import net.wowdev.ecommerce.domain.dto.PaymentDTO;
 import net.wowdev.ecommerce.domain.entity.PaymentEntity;
 import net.wowdev.ecommerce.domain.enums.PaymentMethod;
 import net.wowdev.ecommerce.domain.enums.PaymentStatus;
-import net.wowdev.ecommerce.domain.events.PaymentCompletedEvent;
-import net.wowdev.ecommerce.domain.events.PaymentFailedEvent;
+import net.wowdev.ecommerce.domain.events.PaymentCompleted;
+import net.wowdev.ecommerce.domain.events.PaymentFailed;
 import net.wowdev.ecommerce.domain.mapper.PaymentMapper;
 import net.wowdev.ecommerce.payments.messaging.PaymentProducer;
 import net.wowdev.ecommerce.payments.repository.PaymentRepository;
@@ -33,7 +33,7 @@ public class PaymentServiceImpl implements PaymentService {
   private final PaymentProducer paymentProducer;
 
   @Value(value = "${app.service.payments.failing}")
-  private boolean serviceIsFailing;
+  private boolean failsWhenRunning;
 
   @Override
   @Transactional(readOnly = true)
@@ -83,12 +83,12 @@ public class PaymentServiceImpl implements PaymentService {
   @Override
   @Transactional
   public void process(OrderDTO orderDTO) {
-    log.debug(">> Payment for order {} started.", orderDTO.getId());
-    log.debug(">> Payment logic still need to be implemented...");
+    log.debug(">> Processing Payment for order: {}", orderDTO.getId());
 
-    //    PaymentMethodDTO paymentMethodDTO =
-    //        paymentMethodService.findById(orderDTO.getPaymentMethodId());
-    //    CustomerDTO customerDTO = customerService.findById(orderDTO.getCustomerId());
+    // get replicated data for processing the payment
+    // PaymentMethodDTO paymentMethodDTO =
+    //   paymentMethodService.findById(orderDTO.getPaymentMethodId());
+    // CustomerDTO customerDTO = customerService.findById(orderDTO.getCustomerId());
 
     PaymentDTO paymentDTO =
         new PaymentDTO(
@@ -106,19 +106,19 @@ public class PaymentServiceImpl implements PaymentService {
 
     try {
 
-      if (serviceIsFailing()) {
-        throw new RuntimeException("Payment processing returned following status: UNAUTHORIZED");
+      if (failsWhenRunning()) {
+        throw new RuntimeException(
+            "Payment could not be processed. Payment status: REJECTED.");
       }
       log.debug(">> Payment for order {} successfully finished.", orderDTO.getId());
 
-      // TODO try to add some logic here for rejecting payment on certain conditions
       paymentDTO.setPaymentStatus(PaymentStatus.AUTHORIZED);
       PaymentDTO createdDTO = this.create(paymentDTO);
       publishPaymentCompletedEvent(orderDTO, createdDTO);
 
     } catch (RuntimeException e) {
-      log.debug(">> Payment for order {} failed.", orderDTO.getId());
-      paymentDTO.setPaymentStatus(PaymentStatus.FAILED);
+      log.debug(">> Payment for order {} failed. Reason: {}", orderDTO.getId(), e.getMessage());
+      paymentDTO.setPaymentStatus(PaymentStatus.REJECTED);
       paymentRepository.save(PaymentMapper.toEntity(paymentDTO));
       publishPaymentFailedEvent(orderDTO, e.getMessage());
     }
@@ -127,13 +127,13 @@ public class PaymentServiceImpl implements PaymentService {
   @Transactional
   @Override
   public void compensate(OrderDTO orderDTO, String reason) {
-    log.debug(">> Compensating payment for order: {}", orderDTO.getId());
+    log.debug(">> Compensating Payment for order: {}", orderDTO.getId());
     publishPaymentFailedEvent(orderDTO, reason);
   }
 
   private void publishPaymentFailedEvent(OrderDTO orderDTO, String reason) {
     paymentProducer.publish(
-        new PaymentFailedEvent(
+        new PaymentFailed(
             UUID.randomUUID(),
             orderDTO.getId().toString(),
             orderDTO,
@@ -144,7 +144,7 @@ public class PaymentServiceImpl implements PaymentService {
 
   private void publishPaymentCompletedEvent(OrderDTO orderDTO, PaymentDTO createdDTO) {
     paymentProducer.publish(
-        new PaymentCompletedEvent(
+        new PaymentCompleted(
             UUID.randomUUID(),
             orderDTO.getId().toString(),
             orderDTO,
@@ -153,15 +153,14 @@ public class PaymentServiceImpl implements PaymentService {
             PaymentService.ORIGIN_SERVICE));
   }
 
-  private boolean serviceIsFailing() {
-    if (this.serviceIsFailing) {
+  private boolean failsWhenRunning() {
+    if (this.failsWhenRunning) {
       log.debug(
           """
-          >> Service is configured o be failing when processing events. "
-             See "app.service.payments.failing" or "SERVICE_PAYMENTS_FAILING" environment var.
-          """
-      );
+          >> Service is configured to be failing when processing events. "
+             This option can be configured with the "SERVICE_PAYMENTS_FAILING" environment variable.
+          """);
     }
-    return this.serviceIsFailing;
+    return this.failsWhenRunning;
   }
 }

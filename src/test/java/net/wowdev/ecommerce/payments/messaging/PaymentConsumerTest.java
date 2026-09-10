@@ -11,9 +11,9 @@ import net.wowdev.ecommerce.datareplication.service.PaymentMethodReplicationServ
 import net.wowdev.ecommerce.domain.dto.CustomerDTO;
 import net.wowdev.ecommerce.domain.dto.OrderDTO;
 import net.wowdev.ecommerce.domain.dto.PaymentMethodDTO;
-import net.wowdev.ecommerce.domain.events.CustomerLoadedEvent;
-import net.wowdev.ecommerce.domain.events.InventoryUpdatedEvent;
-import net.wowdev.ecommerce.domain.events.PaymentMethodLoadedEvent;
+import net.wowdev.ecommerce.domain.events.CustomerReplicationCompleted;
+import net.wowdev.ecommerce.domain.events.InventoryCompleted;
+import net.wowdev.ecommerce.domain.events.PaymentMethodReplicationCompleted;
 import net.wowdev.ecommerce.payments.service.PaymentService;
 import org.junit.jupiter.api.Test;
 
@@ -27,21 +27,24 @@ class PaymentConsumerTest {
     final OrderDTO order = new OrderDTO();
 
     consumer.handle(
-        new CustomerLoadedEvent(
+        new CustomerReplicationCompleted(
             UUID.randomUUID(),
             "customer-tx",
+            new OrderDTO(),
             new CustomerDTO(),
             Instant.now(),
             PaymentService.ORIGIN_SERVICE));
+
     consumer.handle(
-        new PaymentMethodLoadedEvent(
+        new PaymentMethodReplicationCompleted(
             UUID.randomUUID(),
             "payment-method-tx",
             new PaymentMethodDTO(),
             Instant.now(),
             PaymentService.ORIGIN_SERVICE));
+
     consumer.handle(
-        new InventoryUpdatedEvent(
+        new InventoryCompleted(
             UUID.randomUUID(),
             "inventory-tx",
             order,

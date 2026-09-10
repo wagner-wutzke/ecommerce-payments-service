@@ -10,13 +10,12 @@ import java.time.Instant;
 import java.util.Optional;
 import java.util.UUID;
 import net.wowdev.ecommerce.datareplication.service.CustomerReplicationService;
-import net.wowdev.ecommerce.datareplication.service.OrderReplicationService;
 import net.wowdev.ecommerce.datareplication.service.PaymentMethodReplicationService;
 import net.wowdev.ecommerce.domain.dto.OrderDTO;
 import net.wowdev.ecommerce.domain.dto.PaymentDTO;
 import net.wowdev.ecommerce.domain.entity.PaymentEntity;
-import net.wowdev.ecommerce.domain.events.PaymentCompletedEvent;
-import net.wowdev.ecommerce.domain.events.PaymentFailedEvent;
+import net.wowdev.ecommerce.domain.events.PaymentCompleted;
+import net.wowdev.ecommerce.domain.events.PaymentFailed;
 import net.wowdev.ecommerce.payments.TestFixtures;
 import net.wowdev.ecommerce.payments.messaging.PaymentProducer;
 import net.wowdev.ecommerce.payments.repository.PaymentRepository;
@@ -32,21 +31,28 @@ class PaymentServiceImplTest {
   private static final UUID ID = TestFixtures.paymentDto().getId();
   private PaymentRepository repository;
   private PaymentServiceImpl service;
-  private PaymentMethodReplicationService paymentMethodRepository;
-  private CustomerReplicationService customerReplicationService;
-  private OrderReplicationService orderReplicationService;
   private PaymentProducer paymentProducer;
+
+  private static OrderDTO order() {
+    final OrderDTO order = new OrderDTO();
+    order.setId(UUID.fromString("22222222-2222-2222-2222-222222222222"));
+    order.setCustomerId(UUID.fromString("33333333-3333-3333-3333-333333333333"));
+    order.setPaymentMethodId(UUID.fromString("44444444-4444-4444-4444-444444444444"));
+    order.setTotalAmount(new BigDecimal("25.00"));
+    return order;
+  }
 
   @BeforeEach
   void setUp() {
     repository = mock(PaymentRepository.class);
-    paymentMethodRepository = mock(PaymentMethodReplicationService.class);
-    customerReplicationService = mock(CustomerReplicationService.class);
+    PaymentMethodReplicationService paymentMethodRepository = mock(
+        PaymentMethodReplicationService.class);
+    CustomerReplicationService customerReplicationService = mock(CustomerReplicationService.class);
     paymentProducer = mock(PaymentProducer.class);
     service =
         new PaymentServiceImpl(
             repository, paymentMethodRepository, customerReplicationService, paymentProducer);
-    ReflectionTestUtils.setField(service, "serviceIsFailing", false);
+    ReflectionTestUtils.setField(service, "failsWhenRunning", false);
   }
 
   @Test
@@ -106,15 +112,15 @@ class PaymentServiceImplTest {
       service.process(order);
 
       verify(repository).save(any(PaymentEntity.class));
-      verify(paymentProducer).publish(any(PaymentCompletedEvent.class));
-      verify(paymentProducer, never()).publish(any(PaymentFailedEvent.class));
+      verify(paymentProducer).publish(any(PaymentCompleted.class));
+      verify(paymentProducer, never()).publish(any(PaymentFailed.class));
     }
   }
 
   @Test
   void processesFailedPaymentAndPublishesFailure() {
     final OrderDTO order = order();
-    ReflectionTestUtils.setField(service, "serviceIsFailing", true);
+    ReflectionTestUtils.setField(service, "failsWhenRunning", true);
     when(repository.save(any(PaymentEntity.class)))
         .thenAnswer(invocation -> invocation.getArgument(0));
 
@@ -123,17 +129,8 @@ class PaymentServiceImplTest {
       service.process(order);
 
       verify(repository).save(any(PaymentEntity.class));
-      verify(paymentProducer).publish(any(PaymentFailedEvent.class));
-      verify(paymentProducer, never()).publish(any(PaymentCompletedEvent.class));
+      verify(paymentProducer).publish(any(PaymentFailed.class));
+      verify(paymentProducer, never()).publish(any(PaymentCompleted.class));
     }
-  }
-
-  private static OrderDTO order() {
-    final OrderDTO order = new OrderDTO();
-    order.setId(UUID.fromString("22222222-2222-2222-2222-222222222222"));
-    order.setCustomerId(UUID.fromString("33333333-3333-3333-3333-333333333333"));
-    order.setPaymentMethodId(UUID.fromString("44444444-4444-4444-4444-444444444444"));
-    order.setTotalAmount(new BigDecimal("25.00"));
-    return order;
   }
 }

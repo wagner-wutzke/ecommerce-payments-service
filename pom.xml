@@ -6,7 +6,7 @@
 
   <groupId>net.wowdev.ecommerce</groupId>
   <artifactId>payments-service</artifactId>
-  <version>1.0.0</version>
+  <version>1.0.0-SNAPSHOT</version>
   <name>payments-service</name>
   <description>E-Commerce Payments Microservice</description>
 

@@ -42,6 +42,7 @@ app:
     shipments-topic: ${KAFKA_SHIPMENTS_TOPIC:shipments-topic.v1}
 
   service:
+    inventory.failing: ${SERVICE_INVENTORY_FAILING:false}
     payments.failing: ${SERVICE_PAYMENTS_FAILING:false}
     invoices.failing: ${SERVICE_INVOICES_FAILING:false}
     shipments.failing: ${SERVICE_SHIPMENTS_FAILING:false}

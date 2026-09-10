@@ -34,9 +34,7 @@ class KafkaConfigTest {
   private static void assertProducerConfiguration(
       final ProducerFactory<String, Object> producerFactory) {
     final MapAssertions properties =
-        new MapAssertions(
-            producerFactory
-                .getConfigurationProperties());
+        new MapAssertions(producerFactory.getConfigurationProperties());
     properties.contains(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:9092");
     properties.contains(ProducerConfig.ACKS_CONFIG, "all");
     properties.contains(ProducerConfig.RETRIES_CONFIG, 3);
@@ -52,9 +50,7 @@ class KafkaConfigTest {
   private static void assertConsumerConfiguration(
       final ConsumerFactory<String, Object> consumerFactory) {
     final MapAssertions properties =
-        new MapAssertions(
-            consumerFactory
-                .getConfigurationProperties());
+        new MapAssertions(consumerFactory.getConfigurationProperties());
     properties.contains(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:9092");
     properties.contains(ConsumerConfig.GROUP_ID_CONFIG, "payments-events");
     properties.contains(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);

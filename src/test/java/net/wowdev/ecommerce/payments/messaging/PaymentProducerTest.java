@@ -9,8 +9,8 @@ import java.time.Instant;
 import java.util.UUID;
 import net.wowdev.ecommerce.domain.dto.OrderDTO;
 import net.wowdev.ecommerce.domain.dto.PaymentDTO;
-import net.wowdev.ecommerce.domain.events.PaymentCompletedEvent;
-import net.wowdev.ecommerce.domain.events.PaymentFailedEvent;
+import net.wowdev.ecommerce.domain.events.PaymentCompleted;
+import net.wowdev.ecommerce.domain.events.PaymentFailed;
 import net.wowdev.ecommerce.payments.TestFixtures;
 import net.wowdev.ecommerce.payments.service.PaymentService;
 import org.junit.jupiter.api.Test;
@@ -24,7 +24,7 @@ class PaymentProducerTest {
     final PaymentDTO payment = TestFixtures.paymentDto();
 
     producer.publish(
-        new PaymentCompletedEvent(
+        new PaymentCompleted(
             UUID.randomUUID(),
             "payment-tx",
             new OrderDTO(),
@@ -43,7 +43,7 @@ class PaymentProducerTest {
     order.setId(UUID.fromString("55555555-5555-5555-5555-555555555555"));
 
     producer.publish(
-        new PaymentFailedEvent(
+        new PaymentFailed(
             UUID.randomUUID(),
             "payment-tx",
             order,

@@ -1,8 +1,8 @@
 package net.wowdev.ecommerce.payments.messaging;
 
 import lombok.extern.slf4j.Slf4j;
-import net.wowdev.ecommerce.domain.events.PaymentCompletedEvent;
-import net.wowdev.ecommerce.domain.events.PaymentFailedEvent;
+import net.wowdev.ecommerce.domain.events.PaymentCompleted;
+import net.wowdev.ecommerce.domain.events.PaymentFailed;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Component;
@@ -22,15 +22,15 @@ public class PaymentProducer {
     this.topic = topic;
   }
 
-  @TransactionalEventListener(phase = TransactionPhase.AFTER_COMPLETION)
-  public void publish(PaymentCompletedEvent event) {
-    log.debug(">> Publishing PaymentCompletedEvent: {}", event.eventId());
+  @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+  public void publish(PaymentCompleted event) {
+    log.debug(">> Publishing PaymentCompleted event: {}", event.eventId());
     template.send(topic, event.paymentDTO().getId().toString(), event);
   }
 
-  @TransactionalEventListener(phase = TransactionPhase.AFTER_COMPLETION)
-  public void publish(PaymentFailedEvent event) {
-    log.debug(">> Publishing PaymentFailedEvent: {}", event.eventId());
+  @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+  public void publish(PaymentFailed event) {
+    log.debug(">> Publishing PaymentFailed event: {}", event.eventId());
     template.send(topic, event.orderDTO().getId().toString(), event);
   }
 }

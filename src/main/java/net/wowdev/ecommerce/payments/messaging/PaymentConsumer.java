@@ -4,10 +4,10 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.wowdev.ecommerce.datareplication.service.CustomerReplicationServiceInterface;
 import net.wowdev.ecommerce.datareplication.service.PaymentMethodReplicationServiceInterface;
-import net.wowdev.ecommerce.domain.events.CustomerLoadedEvent;
-import net.wowdev.ecommerce.domain.events.InventoryUpdatedEvent;
-import net.wowdev.ecommerce.domain.events.InvoiceFailedEvent;
-import net.wowdev.ecommerce.domain.events.PaymentMethodLoadedEvent;
+import net.wowdev.ecommerce.domain.events.CustomerReplicationCompleted;
+import net.wowdev.ecommerce.domain.events.InventoryCompleted;
+import net.wowdev.ecommerce.domain.events.InvoiceFailed;
+import net.wowdev.ecommerce.domain.events.PaymentMethodReplicationCompleted;
 import net.wowdev.ecommerce.payments.service.PaymentService;
 import org.springframework.kafka.annotation.KafkaHandler;
 import org.springframework.kafka.annotation.KafkaListener;
@@ -31,36 +31,36 @@ public class PaymentConsumer {
   private final PaymentService paymentService;
 
   @KafkaHandler
-  public void handle(CustomerLoadedEvent event) {
+  public void handle(CustomerReplicationCompleted event) {
     log.debug(
-        ">> Processing CustomerLoadedEvent sent by {}. Event id: {}",
+        ">> Processing CustomerReplicationCompleted event sent by {}. Event id: {}",
         event.origin(),
         event.eventId());
     customerReplicationService.replicate(event.customerDTO());
   }
 
   @KafkaHandler
-  public void handle(PaymentMethodLoadedEvent event) {
+  public void handle(PaymentMethodReplicationCompleted event) {
     log.debug(
-        ">> Processing PaymentMethodLoadedEvent sent by {}. Event id: {}",
+        ">> Processing PaymentMethodReplicationCompleted event sent by {}. Event id: {}",
         event.origin(),
         event.eventId());
     paymentMethodReplicationService.replicate(event.paymentMethodDTO());
   }
 
   @KafkaHandler
-  public void handle(InventoryUpdatedEvent event) {
+  public void handle(InventoryCompleted event) {
     log.debug(
-        ">> Processing InventoryUpdatedEvent sent by {}. Event id: {}",
+        ">> Processing InventoryCompleted event sent by {}. Event id: {}",
         event.origin(),
         event.origin());
     paymentService.process(event.orderDTO());
   }
 
   @KafkaHandler
-  public void handle(InvoiceFailedEvent event) {
+  public void handle(InvoiceFailed event) {
     log.debug(
-        ">> Processing InvoiceFailedEvent sent by {}. Event id: {}",
+        ">> Processing InvoiceFailed event sent by {}. Event id: {}",
         event.origin(),
         event.origin());
     paymentService.compensate(event.ordetDTO(), event.reason());
@@ -68,6 +68,6 @@ public class PaymentConsumer {
 
   @KafkaHandler(isDefault = true)
   public void handleUnknown(Object event) {
-    //log.debug(">> Received an unmapped event of type {}", event.getClass().getSimpleName());
+    // log.debug(">> Received an unmapped event of type {}", event.getClass().getSimpleName());
   }
 }
