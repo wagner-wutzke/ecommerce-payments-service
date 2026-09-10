@@ -108,7 +108,7 @@ public class PaymentServiceImpl implements PaymentService {
 
       if (failsWhenRunning()) {
         throw new RuntimeException(
-            "Payment could not be processed. Payment status: REJECTED.");
+            "The Payment service partner could not process the Payment. Returned status: REJECTED.");
       }
       log.debug(">> Payment for order {} successfully finished.", orderDTO.getId());
 
