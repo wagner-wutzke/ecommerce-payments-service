@@ -16,6 +16,7 @@ spring:
   h2:
     console:
       enabled: ${H2_CONSOLE_ENABLED:true}
+      settings.web-allow-others: true
   kafka:
     bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
     consumer:
