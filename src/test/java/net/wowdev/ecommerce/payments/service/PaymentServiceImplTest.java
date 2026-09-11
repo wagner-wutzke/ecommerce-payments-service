@@ -22,6 +22,7 @@ import net.wowdev.ecommerce.payments.repository.PaymentRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Answers;
+import org.mockito.ArgumentCaptor;
 import org.mockito.MockedStatic;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
@@ -132,5 +133,20 @@ class PaymentServiceImplTest {
       verify(paymentProducer).publish(any(PaymentFailed.class));
       verify(paymentProducer, never()).publish(any(PaymentCompleted.class));
     }
+  }
+
+  @Test
+  void compensatesPaymentByPublishingFailureEvent() {
+    final OrderDTO order = order();
+    final String reason = "invoice generation failed";
+
+    service.compensate(order, reason);
+
+    final ArgumentCaptor<PaymentFailed> event = ArgumentCaptor.forClass(PaymentFailed.class);
+    verify(paymentProducer).publish(event.capture());
+    assertThat(event.getValue().orderDTO()).isSameAs(order);
+    assertThat(event.getValue().reason()).isEqualTo(reason);
+    assertThat(event.getValue().transactionId()).isEqualTo(order.getId().toString());
+    assertThat(event.getValue().origin()).isEqualTo(PaymentService.ORIGIN_SERVICE);
   }
 }

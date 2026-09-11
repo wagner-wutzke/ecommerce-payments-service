@@ -13,6 +13,7 @@ import net.wowdev.ecommerce.domain.dto.OrderDTO;
 import net.wowdev.ecommerce.domain.dto.PaymentMethodDTO;
 import net.wowdev.ecommerce.domain.events.CustomerReplicationCompleted;
 import net.wowdev.ecommerce.domain.events.InventoryCompleted;
+import net.wowdev.ecommerce.domain.events.InvoiceFailed;
 import net.wowdev.ecommerce.domain.events.PaymentMethodReplicationCompleted;
 import net.wowdev.ecommerce.payments.service.PaymentService;
 import org.junit.jupiter.api.Test;
@@ -55,5 +56,26 @@ class PaymentConsumerTest {
     verify(customers).replicate(any());
     verify(methods).replicate(any());
     verify(payments).process(order);
+  }
+
+  @Test
+  void delegatesInvoiceFailuresToPaymentCompensation() {
+    final CustomerReplicationService customers = mock(CustomerReplicationService.class);
+    final PaymentMethodReplicationService methods = mock(PaymentMethodReplicationService.class);
+    final PaymentService payments = mock(PaymentService.class);
+    final PaymentConsumer consumer = new PaymentConsumer(customers, methods, payments);
+    final OrderDTO order = new OrderDTO();
+    final String reason = "invoice generation failed";
+
+    consumer.handle(
+        new InvoiceFailed(
+            UUID.randomUUID(),
+            "invoice-tx",
+            order,
+            Instant.now(),
+            reason,
+            PaymentService.ORIGIN_SERVICE));
+
+    verify(payments).compensate(order, reason);
   }
 }
