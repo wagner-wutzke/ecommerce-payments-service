@@ -24,6 +24,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.Answers;
 import org.mockito.ArgumentCaptor;
 import org.mockito.MockedStatic;
+import org.mockito.MockedConstruction;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.test.util.ReflectionTestUtils;
@@ -107,7 +108,9 @@ class PaymentServiceImplTest {
     final Instant oddSecond = Instant.parse("2026-01-01T00:00:01Z");
     when(repository.save(any(PaymentEntity.class))).thenReturn(saved);
 
-    try (MockedStatic<Instant> clock = mockStatic(Instant.class, Answers.CALLS_REAL_METHODS)) {
+    try (MockedConstruction<java.util.Random> random = mockConstruction(
+             java.util.Random.class, (mock, context) -> when(mock.nextInt(20)).thenReturn(1));
+         MockedStatic<Instant> clock = mockStatic(Instant.class, Answers.CALLS_REAL_METHODS)) {
       clock.when(Instant::now).thenReturn(oddSecond);
 
       service.process(order);
@@ -125,9 +128,13 @@ class PaymentServiceImplTest {
     when(repository.save(any(PaymentEntity.class)))
         .thenAnswer(invocation -> invocation.getArgument(0));
 
-    try (MockedStatic<Instant> clock = mockStatic(Instant.class, Answers.CALLS_REAL_METHODS)) {
+    try (MockedConstruction<java.util.Random> random = mockConstruction(
+             java.util.Random.class, (mock, context) -> when(mock.nextInt(20)).thenReturn(0));
+         MockedStatic<Instant> clock = mockStatic(Instant.class, Answers.CALLS_REAL_METHODS)) {
 
-      service.process(order);
+      assertThatThrownBy(() -> service.process(order))
+          .isInstanceOf(RuntimeException.class)
+          .hasMessage("The Payment service partner could not process the payment. Returned status: REJECTED.");
 
       verify(repository).save(any(PaymentEntity.class));
       verify(paymentProducer).publish(any(PaymentFailed.class));

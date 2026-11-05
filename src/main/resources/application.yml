@@ -17,12 +17,14 @@ spring:
     console:
       enabled: ${H2_CONSOLE_ENABLED:true}
       settings.web-allow-others: true
+
   kafka:
     bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
     consumer:
       group-id: ${KAFKA_CONSUMER_GROUP:payments-events-group.v1}
       properties:
         spring.json.trusted.packages: "net.wowdev.ecommerce.domain.events"
+        retry.backoff.ms: 3000
     producer:
       acks: all
       retries: 3
@@ -30,7 +32,7 @@ spring:
         enable.idempotence: true
         max.in.flight.requests.per.connection: 5
         delivery.timeout.ms: 30000
-        request.timeout.ms: 10000
+        request.timeout.ms: 15000
         linger.ms: 0
 
 app:
@@ -42,18 +44,34 @@ app:
     invoices-topic: ${KAFKA_INVOICES_TOPIC:invoices-topic.v1}
     shipments-topic: ${KAFKA_SHIPMENTS_TOPIC:shipments-topic.v1}
 
+    payments-event-listener-id: ${KAFKA_PAYMENT_LISTENER_ID:payments-event-listener-id}
+
   service:
     payments.failing: ${SERVICE_PAYMENTS_FAILING:false}
+
+resilience4j:
+  circuitbreaker:
+    instances:
+      ecommerceCircuitBreakerGateway:
+        slidingWindowType: COUNT_BASED
+        slidingWindowSize: 10
+        failureRateThreshold: 50             # Trip if 50% of the last 10 requests fail
+        slowCallRateThreshold: 75            # Trip if 75% take longer than slowCallDuration
+        slowCallDurationThreshold: 2000ms    # 2 seconds considered slow
+        waitDurationInOpenState: 15000ms     # Wait 15 seconds before trying half-open
+        permittedNumberOfCallsInHalfOpenState: 3
+        automaticTransitionFromOpenToHalfOpenEnabled: true
+
 
 logging:
   level:
     org.hibernate.orm.jdbc.bind: INFO
     org.apache.kafka.common: ERROR
     org.apache.kafka.clients: ERROR
-    net.wowdev.ecommerce.orders: ${LOG_LEVEL_ORDERS_SERVICE:DEBUG}
-    net.wowdev.ecommerce.customers: ${LOG_LEVEL_CUSTOMERS_SERVICE:DEBUG}
-    net.wowdev.ecommerce.inventory: ${LOG_LEVEL_INVENTORY_SERVICE:DEBUG}
+    net.wowdev.ecommerce.orders: ${LOG_LEVEL_ORDERS_SERVICE:INFO}
+    net.wowdev.ecommerce.customers: ${LOG_LEVEL_CUSTOMERS_SERVICE:INFO}
+    net.wowdev.ecommerce.inventory: ${LOG_LEVEL_INVENTORY_SERVICE:INFO}
     net.wowdev.ecommerce.payments: ${LOG_LEVEL_PAYMENTS_SERVICE:DEBUG}
-    net.wowdev.ecommerce.invoices: ${LOG_LEVEL_INVOICES_SERVICE:DEBUG}
-    net.wowdev.ecommerce.shipments: ${LOG_LEVEL_SHIPMENTS_SERVICE:DEBUG}
+    net.wowdev.ecommerce.invoices: ${LOG_LEVEL_INVOICES_SERVICE:INFO}
+    net.wowdev.ecommerce.shipments: ${LOG_LEVEL_SHIPMENTS_SERVICE:INFO}
     net.wowdev.ecommerce.datareplication: ${LOG_LEVEL_DATAREPLICATION:INFO}

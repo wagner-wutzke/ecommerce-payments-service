@@ -1,6 +1,7 @@
 package net.wowdev.ecommerce.payments.service;
 
 import java.time.Instant;
+import java.util.Random;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -108,7 +109,7 @@ public class PaymentServiceImpl implements PaymentService {
 
       if (failsWhenRunning()) {
         throw new RuntimeException(
-            "The Payment service partner could not process the Payment. Returned status: REJECTED.");
+            "The Payment service partner could not process the payment. Returned status: REJECTED.");
       }
       log.debug(">> Payment for order {} successfully finished.", orderDTO.getId());
 
@@ -121,6 +122,7 @@ public class PaymentServiceImpl implements PaymentService {
       paymentDTO.setPaymentStatus(PaymentStatus.REJECTED);
       paymentRepository.save(PaymentMapper.toEntity(paymentDTO));
       publishPaymentFailedEvent(orderDTO, e.getMessage());
+      throw e;
     }
   }
 
@@ -154,13 +156,16 @@ public class PaymentServiceImpl implements PaymentService {
   }
 
   private boolean failsWhenRunning() {
-    if (this.failsWhenRunning) {
+    boolean toFail = new Random().nextInt(20) % 2 == 0;
+    //if (this.failsWhenRunning) {
+    if (toFail) {
       log.debug(
           """
-          >> Service is configured to be failing when processing events. "
-             This option can be configured with the "SERVICE_PAYMENTS_FAILING" environment variable.
+              >> Service is configured to be failing when processing events.
+                 This option can be configured with the "SERVICE_PAYMENTS_FAILING" environment variable.
           """);
     }
-    return this.failsWhenRunning;
+    //return this.failsWhenRunning;
+    return toFail;
   }
 }

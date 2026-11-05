@@ -26,6 +26,7 @@ class KafkaConfigTest {
     ReflectionTestUtils.setField(config, "requestTimeout", "10000");
     ReflectionTestUtils.setField(config, "idempotence", true);
     ReflectionTestUtils.setField(config, "retries", 3);
+    ReflectionTestUtils.setField(config, "retryBackoff", 1000);
     ReflectionTestUtils.setField(config, "maxRequestsInFlight", 5);
     ReflectionTestUtils.setField(config, "trustedPackages", "net.wowdev.ecommerce.domain.events");
     return config;
