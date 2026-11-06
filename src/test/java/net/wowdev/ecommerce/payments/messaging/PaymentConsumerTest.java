@@ -19,6 +19,7 @@ import net.wowdev.ecommerce.domain.events.InventoryCompleted;
 import net.wowdev.ecommerce.domain.events.InvoiceFailed;
 import net.wowdev.ecommerce.domain.events.PaymentMethodReplicationCompleted;
 import net.wowdev.ecommerce.payments.service.PaymentService;
+import io.github.resilience4j.circuitbreaker.CallNotPermittedException;
 import org.junit.jupiter.api.Test;
 import org.springframework.cloud.client.circuitbreaker.CircuitBreaker;
 import org.springframework.cloud.client.circuitbreaker.CircuitBreakerFactory;
@@ -120,5 +121,31 @@ class PaymentConsumerTest {
     org.junit.jupiter.api.Assertions.assertEquals(
         ">> Payment pipeline temporarily unavailable. Retrying via broker...", exception.getMessage());
     org.junit.jupiter.api.Assertions.assertInstanceOf(IllegalStateException.class, exception.getCause());
+  }
+
+  @Test
+  void identifiesOpenCircuitBreakerFailureSeparately() {
+    final CustomerReplicationService customers = mock(CustomerReplicationService.class);
+    final PaymentMethodReplicationService methods = mock(PaymentMethodReplicationService.class);
+    final PaymentService payments = mock(PaymentService.class);
+    final CircuitBreakerFactory<?, ?> factory = mock(CircuitBreakerFactory.class);
+    final CircuitBreaker breaker = mock(CircuitBreaker.class);
+    when(factory.create("ecommerceCircuitBreakerGateway")).thenReturn(breaker);
+    when(breaker.run(any(), any())).thenAnswer(invocation -> {
+      final java.util.function.Function<Throwable, ?> fallback = invocation.getArgument(1);
+      final io.github.resilience4j.circuitbreaker.CircuitBreaker resilience4jBreaker =
+          io.github.resilience4j.circuitbreaker.CircuitBreaker.ofDefaults("test");
+      return fallback.apply(
+          CallNotPermittedException.createCallNotPermittedException(resilience4jBreaker));
+    });
+    final PaymentConsumer consumer = new PaymentConsumer(customers, methods, payments, factory);
+    final InventoryCompleted event = new InventoryCompleted(
+        UUID.randomUUID(), "inventory-tx", new OrderDTO(), Instant.now(), PaymentService.ORIGIN_SERVICE);
+
+    final CircuitBreakerOpenException exception = org.junit.jupiter.api.Assertions.assertThrows(
+        CircuitBreakerOpenException.class, () -> consumer.handle(event));
+
+    org.junit.jupiter.api.Assertions.assertInstanceOf(
+        CallNotPermittedException.class, exception.getCause());
   }
 }

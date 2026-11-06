@@ -2,6 +2,9 @@ package net.wowdev.ecommerce.payments.config;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.util.function.BiFunction;
+import net.wowdev.ecommerce.payments.messaging.CircuitBreakerOpenException;
+import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.serialization.StringDeserializer;
@@ -10,6 +13,8 @@ import org.junit.jupiter.api.Test;
 import org.springframework.kafka.config.ConcurrentKafkaListenerContainerFactory;
 import org.springframework.kafka.core.*;
 import org.springframework.kafka.listener.DefaultErrorHandler;
+import org.springframework.util.backoff.BackOff;
+import org.springframework.util.backoff.BackOffExecution;
 import org.springframework.kafka.support.serializer.JacksonJsonDeserializer;
 import org.springframework.kafka.support.serializer.JacksonJsonSerializer;
 import org.springframework.test.util.ReflectionTestUtils;
@@ -26,6 +31,11 @@ class KafkaConfigTest {
     ReflectionTestUtils.setField(config, "requestTimeout", "10000");
     ReflectionTestUtils.setField(config, "idempotence", true);
     ReflectionTestUtils.setField(config, "retries", 3);
+    ReflectionTestUtils.setField(config, "consumerMaxRetries", 3);
+    ReflectionTestUtils.setField(config, "consumerRetryMultiplier", 2.0);
+    ReflectionTestUtils.setField(config, "consumerRetryMaxInterval", 30000L);
+    ReflectionTestUtils.setField(config, "circuitBreakerOpenRetryInitialInterval", 16000L);
+    ReflectionTestUtils.setField(config, "circuitBreakerOpenRetryMaxInterval", 60000L);
     ReflectionTestUtils.setField(config, "retryBackoff", 1000);
     ReflectionTestUtils.setField(config, "maxRequestsInFlight", 5);
     ReflectionTestUtils.setField(config, "trustedPackages", "net.wowdev.ecommerce.domain.events");
@@ -78,6 +88,44 @@ class KafkaConfigTest {
     assertThat(ReflectionTestUtils.getField(listenerFactory, "concurrency")).isEqualTo(3);
     assertThat(ReflectionTestUtils.getField(listenerFactory, "commonErrorHandler"))
         .isInstanceOf(DefaultErrorHandler.class);
+  }
+
+  @Test
+  @SuppressWarnings("unchecked")
+  void configuresExponentialBackoffAndLongerDelayForOpenBreaker() {
+    final KafkaConfig config = configuredKafkaConfig();
+    final ConsumerFactory<String, Object> consumerFactory = config.consumerFactory();
+    final KafkaTemplate<String, Object> kafkaTemplate =
+        config.kafkaTemplate(config.producerFactory());
+    final ConcurrentKafkaListenerContainerFactory<String, Object> listenerFactory =
+        config.kafkaListenerContainerFactory(consumerFactory, kafkaTemplate);
+    final DefaultErrorHandler errorHandler = (DefaultErrorHandler)
+        ReflectionTestUtils.getField(listenerFactory, "commonErrorHandler");
+    final BiFunction<ConsumerRecord<?, ?>, Exception, BackOff> backOffFunction =
+        (BiFunction<ConsumerRecord<?, ?>, Exception, BackOff>)
+            ReflectionTestUtils.getField(errorHandler, "userBackOffFunction");
+    final ConsumerRecord<String, Object> record =
+        new ConsumerRecord<>("inventory-topic", 0, 0L, "order-1", new Object());
+
+    final BackOff ordinaryBackOff = backOffFunction.apply(record, new RuntimeException("failed"));
+    final BackOff breakerOpenBackOff = backOffFunction.apply(
+        record,
+        new RuntimeException("wrapped", new CircuitBreakerOpenException("open", null)));
+
+    assertBackoffDelays(ordinaryBackOff, 1000L, 2000L, 4000L);
+    assertBackoffDelays(breakerOpenBackOff, 16000L, 32000L, 60000L);
+    assertThat(ReflectionTestUtils.getField(
+        ReflectionTestUtils.getField(errorHandler, "failureTracker"),
+        "resetStateOnExceptionChange")).isEqualTo(true);
+  }
+
+  private static void assertBackoffDelays(
+      final BackOff backOff, final long first, final long second, final long third) {
+    final BackOffExecution execution = backOff.start();
+    assertThat(execution.nextBackOff()).isEqualTo(first);
+    assertThat(execution.nextBackOff()).isEqualTo(second);
+    assertThat(execution.nextBackOff()).isEqualTo(third);
+    assertThat(execution.nextBackOff()).isEqualTo(BackOffExecution.STOP);
   }
 
   private record MapAssertions(java.util.Map<String, Object> values) {

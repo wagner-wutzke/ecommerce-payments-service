@@ -1,5 +1,7 @@
 package net.wowdev.ecommerce.payments.config;
 
+import net.wowdev.ecommerce.payments.commons.Utils;
+import net.wowdev.ecommerce.payments.messaging.CircuitBreakerOpenException;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.serialization.StringDeserializer;
@@ -13,9 +15,10 @@ import org.springframework.kafka.core.*;
 import org.springframework.kafka.listener.ContainerProperties;
 import org.springframework.kafka.listener.DeadLetterPublishingRecoverer;
 import org.springframework.kafka.listener.DefaultErrorHandler;
+import org.springframework.kafka.support.ExponentialBackOffWithMaxRetries;
 import org.springframework.kafka.support.serializer.JacksonJsonDeserializer;
 import org.springframework.kafka.support.serializer.JacksonJsonSerializer;
-import org.springframework.util.backoff.FixedBackOff;
+import org.springframework.util.backoff.BackOff;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -47,6 +50,21 @@ public class KafkaConfig {
 
     @Value("${spring.kafka.producer.retries:3}")
     private Integer retries;
+
+    @Value("${app.kafka.retry.max-retries:3}")
+    private Integer consumerMaxRetries;
+
+    @Value("${app.kafka.retry.multiplier:2.0}")
+    private Double consumerRetryMultiplier;
+
+    @Value("${app.kafka.retry.max-interval-ms:30000}")
+    private Long consumerRetryMaxInterval;
+
+    @Value("${app.kafka.retry.circuit-breaker-open.initial-interval-ms:16000}")
+    private Long circuitBreakerOpenRetryInitialInterval;
+
+    @Value("${app.kafka.retry.circuit-breaker-open.max-interval-ms:60000}")
+    private Long circuitBreakerOpenRetryMaxInterval;
 
     @Value("${spring.kafka.consumer.properties.retry.backoff.ms}")
     private Integer retryBackoff;
@@ -110,8 +128,28 @@ public class KafkaConfig {
         DefaultErrorHandler defaultErrorHandler =
                 new DefaultErrorHandler(
                         new DeadLetterPublishingRecoverer(kafkaTemplate),
-                        new FixedBackOff(retryBackoff, retries));
+                        retryBackOff(retryBackoff, consumerRetryMaxInterval));
+        BackOff circuitBreakerOpenBackOff = retryBackOff(
+                circuitBreakerOpenRetryInitialInterval,
+                circuitBreakerOpenRetryMaxInterval);
+        // The first failed call can open the breaker, so the same record may move from an
+        // ordinary processing exception to CircuitBreakerOpenException on its next delivery.
+        defaultErrorHandler.setResetStateOnExceptionChange(true);
+        defaultErrorHandler.setBackOffFunction((record, exception) ->
+                Utils.hasCause(exception, CircuitBreakerOpenException.class)
+                        ? circuitBreakerOpenBackOff
+                        : retryBackOff(retryBackoff, consumerRetryMaxInterval));
         factory.setCommonErrorHandler(defaultErrorHandler);
         return factory;
     }
+
+    private BackOff retryBackOff(long initialInterval, long maxInterval) {
+        ExponentialBackOffWithMaxRetries backOff =
+                new ExponentialBackOffWithMaxRetries(consumerMaxRetries);
+        backOff.setInitialInterval(initialInterval);
+        backOff.setMultiplier(consumerRetryMultiplier);
+        backOff.setMaxInterval(maxInterval);
+        return backOff;
+    }
+
 }

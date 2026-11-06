@@ -6,6 +6,10 @@ The service offers RESTful endpoints for incoming CRUD operations from the outsi
 It "talks" internally with other eCommerce services via event-driven async communication
 using a Kafka broker.
 
+>It also implements the **Circuit Breaker pattern** using **Spring Cloud Circuit Breaker** and 
+> **Kafka Retries**.\
+For further information, please check this [article](circuit-breaker.md).
+
 Since this is an educational / portfolio project, it doesn't implement any kind of authentication.\
 The project is meant to run exclusively on a local environment.
 
@@ -43,3 +47,5 @@ Please be aware of the port being used in the docker command (9030) and the one 
 The project is using the pattern **one-database-per-service**.\
 It uses a file based **H2** database for simplicity matters, since this is only a portfolio project.\
 Tables are created and updated on application start up.
+
+

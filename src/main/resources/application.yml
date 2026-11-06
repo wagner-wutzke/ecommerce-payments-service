@@ -46,6 +46,15 @@ app:
 
     payments-event-listener-id: ${KAFKA_PAYMENT_LISTENER_ID:payments-event-listener-id}
 
+    retry:
+      max-retries: ${KAFKA_CONSUMER_MAX_RETRIES:3}
+      multiplier: ${KAFKA_CONSUMER_RETRY_MULTIPLIER:2.0}
+      max-interval-ms: ${KAFKA_CONSUMER_RETRY_MAX_INTERVAL_MS:30000}
+      circuit-breaker-open:
+        # Keep this longer than resilience4j.circuitbreaker.instances.*.waitDurationInOpenState.
+        initial-interval-ms: ${KAFKA_CIRCUIT_BREAKER_RETRY_INITIAL_INTERVAL_MS:16000}
+        max-interval-ms: ${KAFKA_CIRCUIT_BREAKER_RETRY_MAX_INTERVAL_MS:60000}
+
   service:
     payments.failing: ${SERVICE_PAYMENTS_FAILING:false}
 

@@ -8,7 +8,9 @@ import net.wowdev.ecommerce.domain.events.CustomerReplicationCompleted;
 import net.wowdev.ecommerce.domain.events.InventoryCompleted;
 import net.wowdev.ecommerce.domain.events.InvoiceFailed;
 import net.wowdev.ecommerce.domain.events.PaymentMethodReplicationCompleted;
+import net.wowdev.ecommerce.payments.commons.Utils;
 import net.wowdev.ecommerce.payments.service.PaymentService;
+import io.github.resilience4j.circuitbreaker.CallNotPermittedException;
 import org.springframework.cloud.client.circuitbreaker.CircuitBreaker;
 import org.springframework.cloud.client.circuitbreaker.CircuitBreakerFactory;
 import org.springframework.kafka.annotation.KafkaHandler;
@@ -80,9 +82,13 @@ public class PaymentConsumer {
         // Throw an exception to tell the broker (like Kafka/RabbitMQ) that processing failed.
         // This prevents the message from being acknowledged (ACK'ed) so it can be retried later,
         // or routed to a backing retry/dead-letter topic based on your broker configuration.
-        throw new RuntimeException(">> Payment pipeline temporarily unavailable. Retrying via broker...",
-                throwable);
+        String message = ">> Payment pipeline temporarily unavailable. Retrying via broker...";
+        if (Utils.hasCause(throwable, CallNotPermittedException.class)) {
+            throw new CircuitBreakerOpenException(message, throwable);
+        }
+        throw new RuntimeException(message, throwable);
     }
+
 
     @KafkaHandler
     public void handle(InvoiceFailed event) {
